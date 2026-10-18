@@ -15,7 +15,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
 <style>
 body{margin:0}
-/* Layout: pupitre noir en une colonne. Temps de jeu, chrono géant, équipes autour de l'historique, grosses tuiles de score, puis 10 et 15. */
+/* Layout: pupitre noir qui tient sur un écran de téléphone sans défilement. Les hauteurs suivent la hauteur de l'écran (dvh). */
 :root{
   color-scheme:dark;
   --bg:#000000; --fg:#ffffff; --muted:#a3a8ad; --line:#2c2f33; --panel:#14161a;
@@ -28,26 +28,28 @@ body{margin:0}
   --font:Roboto,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
 }
 *{box-sizing:border-box}
-body{
-  background:var(--bg); color:var(--fg);
-  font:16px/1.3 var(--font);
-  padding-block:6px 28px;
-  padding-left:max(16px,env(safe-area-inset-left,0px));
-  padding-right:max(16px,env(safe-area-inset-right,0px));
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font:15px/1.25 var(--font)}
+.app{
+  max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;
+  display:grid;grid-template-rows:auto auto minmax(190px,1fr) auto auto auto auto auto auto;gap:8px;
+  padding-top:max(6px,env(safe-area-inset-top,0px));
+  padding-bottom:max(8px,env(safe-area-inset-bottom,0px));
+  padding-left:max(12px,env(safe-area-inset-left,0px));
+  padding-right:max(12px,env(safe-area-inset-right,0px));
 }
-.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
 button,input{font:inherit;color:inherit}
-button{border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:12px;background:var(--panel)}
+button{border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:10px;background:var(--panel)}
 button:active{transform:scale(.97)}
 button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
 
 /* Temps de jeu et chrono */
-.gt{display:block;margin:0 auto;background:none;border-radius:8px;padding:6px 12px;font-size:26px;font-weight:500;font-variant-numeric:tabular-nums}
+.gt{display:block;margin:0 auto;background:none;border-radius:8px;padding:2px 10px;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
 .gt.off{color:var(--muted)}
-.stage{text-align:center;border-radius:14px;padding:0 0 6px;cursor:pointer;touch-action:manipulation}
-.big{font-weight:700;font-size:clamp(110px,38vw,200px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.big.long{font-size:clamp(70px,23vw,130px)}
-.sub{min-height:1.4em;font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.stage{text-align:center;border-radius:12px;padding:0 0 2px;cursor:pointer;touch-action:manipulation}
+.big{font-weight:700;font-size:clamp(60px,min(15dvh,30vw),140px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big.long{font-size:clamp(44px,min(10dvh,18vw),96px)}
+.sub{min-height:1.3em;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
 .stage.warn .big{color:var(--card)}
 .stage.paused .big{opacity:.45}
 .stage.done{background:var(--card);color:var(--on-card);animation:blink .5s steps(1) 6}
@@ -56,56 +58,67 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 @media (prefers-reduced-motion:reduce){.stage.done{animation:none}}
 
 /* Équipes et historique */
-.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);gap:10px}
-.side{--tc:var(--t0);--on:var(--on-t0);--dim:var(--t0-dim);display:flex;flex-direction:column;gap:8px;min-width:0}
+.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);gap:8px;min-height:0}
+.side{--tc:var(--t0);--on:var(--on-t0);--dim:var(--t0-dim);display:flex;flex-direction:column;gap:6px;min-width:0}
 .side.s1,.tile.s1{--tc:var(--t1);--on:var(--on-t1);--dim:var(--t1-dim)}
-.nm{width:100%;min-width:0;height:56px;border:0;border-radius:12px;background:var(--tc);color:var(--on);font-weight:700;font-size:22px;text-align:center;padding:0 6px}
-.lab{font-size:19px;text-align:center;line-height:1.1}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--tc);border-radius:10px;overflow:hidden}
-.seg button{height:48px;border-radius:0;background:#1b1b1b;font-weight:500;font-size:19px;border-right:1px solid var(--line)}
+.nm{width:100%;min-width:0;height:40px;border:0;border-radius:10px;background:var(--tc);color:var(--on);font-weight:700;font-size:18px;text-align:center;padding:0 4px}
+.lab{font-size:15px;text-align:center;line-height:1.1}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--tc);border-radius:9px;overflow:hidden}
+.seg button{height:38px;border-radius:0;background:#1b1b1b;font-weight:500;font-size:16px;border-right:1px solid var(--line)}
 .seg button:last-child{border-right:0}
 .seg button.on{background:var(--tc);color:var(--on)}
-.warn-b{height:54px;background:var(--tc);color:var(--on);font-weight:700;font-size:18px;border-radius:10px;padding:0 4px}
-.dots{display:flex;justify-content:space-around;align-items:center;height:26px}
-.dots i{width:22px;height:22px;border-radius:50%;background:#6a6a6a}
+.warn-b{height:40px;background:var(--tc);color:var(--on);font-weight:700;font-size:15px;border-radius:9px;padding:0 4px}
+.dots{display:flex;justify-content:space-around;align-items:center;height:18px}
+.dots i{width:16px;height:16px;border-radius:50%;background:#6a6a6a}
 .dots i.on{background:var(--tc)}
 .s1 .dots i.on{background:#fff}
-.logwrap{position:relative;min-height:220px}
-.log{position:absolute;inset:0;margin:0;padding:0;list-style:none;overflow-y:auto;background:var(--panel);border-radius:10px}
-.log li{padding:11px 10px;font-size:14px;line-height:1.25;border-bottom:1px solid var(--line);color:#e4e6e8;overflow-wrap:anywhere}
+.logwrap{position:relative;min-height:0}
+.log{position:absolute;inset:0;margin:0;padding:0;list-style:none;overflow-y:auto;background:var(--panel);border-radius:9px}
+.log li{padding:8px;font-size:13px;line-height:1.2;border-bottom:1px solid var(--line);color:#e4e6e8;overflow-wrap:anywhere}
 .log li:first-child{color:#fff;font-weight:500}
 .log .empty{color:var(--muted);border:0}
 
 /* Score */
-.score{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1.15fr);gap:10px}
-.tile{--tc:var(--t0);--on:var(--on-t0);position:relative;aspect-ratio:1/1.02;max-width:100%;border-radius:12px;background:var(--tc);color:var(--on)}
-.tile .pt{position:absolute;inset:0;width:100%;height:100%;background:none;color:inherit;border-radius:12px;font-weight:700;font-size:clamp(64px,25vw,130px);line-height:1;font-variant-numeric:tabular-nums;padding-top:6px}
-.tile .mn{position:absolute;left:6px;bottom:6px;width:44px;height:44px;border-radius:10px;background:rgba(0,0,0,.28);color:inherit;font-size:26px;line-height:1;font-weight:500}
-.tile .sets{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:13px;font-weight:500;letter-spacing:.04em;pointer-events:none;opacity:.9}
-.centerbtns{display:flex;flex-direction:column;gap:10px}
+.score{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1.15fr);gap:8px}
+.tile{--tc:var(--t0);--on:var(--on-t0);position:relative;height:clamp(84px,17dvh,160px);border-radius:10px;background:var(--tc);color:var(--on)}
+.tile .pt{position:absolute;inset:0;width:100%;height:100%;background:none;color:inherit;border-radius:10px;font-weight:700;font-size:clamp(48px,min(12dvh,21vw),110px);line-height:1;font-variant-numeric:tabular-nums;padding-top:8px}
+.tile .mn{position:absolute;left:5px;bottom:5px;width:36px;height:36px;border-radius:9px;background:rgba(0,0,0,.28);color:inherit;font-size:22px;line-height:1;font-weight:500}
+.tile .sets{position:absolute;left:0;right:0;top:5px;text-align:center;font-size:11px;font-weight:500;letter-spacing:.04em;pointer-events:none;opacity:.9}
+.centerbtns{display:flex;flex-direction:column;gap:8px}
 .y{background:var(--yellow);color:var(--on-yellow);font-weight:500}
-.centerbtns .y{flex:1;font-size:21px;line-height:1.15;padding:8px 6px}
-.centerbtns .bo{flex:0 0 auto;height:60px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;font-weight:700;font-size:19px}
-.knob{width:46px;height:26px;border-radius:13px;background:rgba(0,0,0,.35);position:relative;flex:0 0 auto}
-.knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--on-yellow);transition:transform .15s}
-.bo[aria-pressed="true"] .knob::after{transform:translateX(20px)}
+.centerbtns .y{flex:1;font-size:17px;line-height:1.1;padding:4px 6px}
+.centerbtns .bo{flex:0 0 auto;height:46px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 8px;font-weight:700;font-size:17px}
+.knob{width:40px;height:22px;border-radius:11px;background:rgba(0,0,0,.35);position:relative;flex:0 0 auto}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--on-yellow);transition:transform .15s}
+.bo[aria-pressed="true"] .knob::after{transform:translateX(18px)}
 
 /* Commandes */
-.ctl{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:10px}
-.ctl button{height:64px;font-size:22px;font-weight:500}
+.ctl{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}
+.ctl button{height:50px;font-size:19px;font-weight:500}
 .clr{background:#fff;color:#111}
 .stp{background:var(--stop);color:var(--on-stop)}
 .armed{background:var(--card)!important;color:var(--on-card)!important}
-.go{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.go button{height:clamp(110px,34vw,170px);background:var(--go);color:var(--on-go);font-weight:500;font-size:clamp(70px,24vw,110px);line-height:1;border-radius:14px;font-variant-numeric:tabular-nums}
-.end90{width:100%;height:60px;font-size:20px;font-weight:500;background:var(--panel);border:2px solid var(--go);color:var(--fg)}
+.go{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.go button{height:clamp(58px,10dvh,100px);background:var(--go);color:var(--on-go);font-weight:500;font-size:clamp(40px,7dvh,64px);line-height:1;border-radius:12px;font-variant-numeric:tabular-nums}
+.end90{width:100%;height:42px;font-size:16px;font-weight:500;background:var(--panel);border:2px solid var(--go);color:var(--fg)}
 
 /* Pied */
-.foot{display:flex;flex-wrap:wrap;gap:8px}
-.foot button{flex:1 1 140px;min-height:46px;font-size:14px;font-weight:500;padding:6px 10px}
+.foot{display:flex;gap:6px}
+.foot button{flex:1 1 0;min-width:0;min-height:36px;font-size:12px;font-weight:500;padding:4px 4px}
 .foot button[aria-pressed="true"]{background:#1f3a2a;color:#8be0ab}
 .foot button[aria-pressed="false"]{background:var(--panel);color:var(--muted)}
-.msg{margin:0;color:var(--muted);font-size:13px;min-height:1.3em}
+.msg{margin:0;color:var(--muted);font-size:12px}
+.msg:empty{display:none}
+
+@media (max-height:740px){
+  .nm,.warn-b{height:34px}
+  .seg button{height:32px}
+  .tile{height:80px}
+  .ctl button{height:44px}
+  .go button{height:54px}
+  .end90{height:36px}
+  .foot button{min-height:32px}
+}
 </style>
 </head>
 <body>
@@ -175,11 +188,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       '</section>'+
       '<button class="end90" id="end90">Fin de set · 90 s</button>'+
       '<section class="foot">'+
-        '<button id="vib" aria-pressed="true">Vibreur activé</button>'+
-        '<button id="snd" aria-pressed="true">Son activé</button>'+
-        '<button id="test">Tester vibreur et son</button>'+
+        '<button id="vib" aria-pressed="true">Vibreur : oui</button>'+
+        '<button id="snd" aria-pressed="true">Son : oui</button>'+
+        '<button id="test">Tester</button>'+
         '<button id="offline" hidden>Télécharger la version hors-ligne</button>'+
-        '<button id="resetAll">Tout remettre à zéro</button>'+
+        '<button id="resetAll">Tout à zéro</button>'+
       '</section>'+
       '<p class="msg" id="msg"></p>'+
     '</div>';
@@ -215,9 +228,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     $('#bo').setAttribute('aria-pressed', S.bo === 5);
     $('#boTxt').textContent = 'Bo' + S.bo;
     $('#vib').setAttribute('aria-pressed', S.vib);
-    $('#vib').textContent = S.vib ? 'Vibreur activé' : 'Vibreur coupé';
+    $('#vib').textContent = S.vib ? 'Vibreur : oui' : 'Vibreur : non';
     $('#snd').setAttribute('aria-pressed', S.snd);
-    $('#snd').textContent = S.snd ? 'Son activé' : 'Son coupé';
+    $('#snd').textContent = S.snd ? 'Son : oui' : 'Son : non';
   }
   for (var q = 0; q < 2; q++) {
     (function(i){
@@ -429,9 +442,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   $('#test').addEventListener('click', function(){
     unlock(); beep();
     var ok = buzz([300, 100, 300]);
-    if (ok === null) setMsg('Le vibreur est coupé. Réactive-le avec le bouton au-dessus.');
-    else if (ok) setMsg('Vibration envoyée. Si rien ne bouge, le téléphone ou le navigateur la bloque.');
-    else setMsg('Vibration bloquée dans cette page. Ouvre l\'appli directement dans Chrome.');
+    if (ok === null) setMsg('Le vibreur est coupé. Réactive-le avec le bouton « Vibreur ».');
+    else if (!('vibrate' in navigator)) setMsg('Ce navigateur ne gère pas la vibration.');
+    else if (ok) setMsg('Chrome a envoyé la vibration au téléphone. Si rien ne bouge, vérifie dans Android : vibrations activées, mode silencieux et Ne pas déranger coupés.');
+    else setMsg('Chrome a refusé la vibration (réponse : non).');
   });
 
   render(); renderLog(); renderTimer(); renderGT();
