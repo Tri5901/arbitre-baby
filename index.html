@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Arbitre Baby</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<style>
+body{margin:0}
+/* Layout: pupitre noir en une colonne. Temps de jeu, chrono géant, équipes autour de l'historique, grosses tuiles de score, puis 10 et 15. */
+:root{
+  color-scheme:dark;
+  --bg:#000000; --fg:#ffffff; --muted:#a3a8ad; --line:#2c2f33; --panel:#14161a;
+  --t0:#e8710a; --on-t0:#ffffff; --t0-dim:#8a4306;
+  --t1:#a8a8a8; --on-t1:#111111; --t1-dim:#5e5e5e;
+  --yellow:#efd36f; --on-yellow:#1a1500;
+  --stop:#f77f7f; --on-stop:#2a0505;
+  --go:#2bc866; --on-go:#04210f;
+  --card:#ffd23f; --on-card:#1a1500;
+  --font:Roboto,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--fg);
+  font:16px/1.3 var(--font);
+  padding-block:6px 28px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.app{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+button,input{font:inherit;color:inherit}
+button{border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:12px;background:var(--panel)}
+button:active{transform:scale(.97)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
+
+/* Temps de jeu et chrono */
+.gt{display:block;margin:0 auto;background:none;border-radius:8px;padding:6px 12px;font-size:26px;font-weight:500;font-variant-numeric:tabular-nums}
+.gt.off{color:var(--muted)}
+.stage{text-align:center;border-radius:14px;padding:0 0 6px;cursor:pointer;touch-action:manipulation}
+.big{font-weight:700;font-size:clamp(110px,38vw,200px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.big.long{font-size:clamp(70px,23vw,130px)}
+.sub{min-height:1.4em;font-size:15px;color:var(--muted);overflow-wrap:anywhere}
+.stage.warn .big{color:var(--card)}
+.stage.paused .big{opacity:.45}
+.stage.done{background:var(--card);color:var(--on-card);animation:blink .5s steps(1) 6}
+.stage.done .sub{color:inherit}
+@keyframes blink{50%{background:var(--bg);color:var(--fg)}}
+@media (prefers-reduced-motion:reduce){.stage.done{animation:none}}
+
+/* Équipes et historique */
+.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);gap:10px}
+.side{--tc:var(--t0);--on:var(--on-t0);--dim:var(--t0-dim);display:flex;flex-direction:column;gap:8px;min-width:0}
+.side.s1,.tile.s1{--tc:var(--t1);--on:var(--on-t1);--dim:var(--t1-dim)}
+.nm{width:100%;min-width:0;height:56px;border:0;border-radius:12px;background:var(--tc);color:var(--on);font-weight:700;font-size:22px;text-align:center;padding:0 6px}
+.lab{font-size:19px;text-align:center;line-height:1.1}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--tc);border-radius:10px;overflow:hidden}
+.seg button{height:48px;border-radius:0;background:#1b1b1b;font-weight:500;font-size:19px;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--tc);color:var(--on)}
+.warn-b{height:54px;background:var(--tc);color:var(--on);font-weight:700;font-size:18px;border-radius:10px;padding:0 4px}
+.dots{display:flex;justify-content:space-around;align-items:center;height:26px}
+.dots i{width:22px;height:22px;border-radius:50%;background:#6a6a6a}
+.dots i.on{background:var(--tc)}
+.s1 .dots i.on{background:#fff}
+.logwrap{position:relative;min-height:220px}
+.log{position:absolute;inset:0;margin:0;padding:0;list-style:none;overflow-y:auto;background:var(--panel);border-radius:10px}
+.log li{padding:11px 10px;font-size:14px;line-height:1.25;border-bottom:1px solid var(--line);color:#e4e6e8;overflow-wrap:anywhere}
+.log li:first-child{color:#fff;font-weight:500}
+.log .empty{color:var(--muted);border:0}
+
+/* Score */
+.score{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1.15fr);gap:10px}
+.tile{--tc:var(--t0);--on:var(--on-t0);position:relative;aspect-ratio:1/1.02;max-width:100%;border-radius:12px;background:var(--tc);color:var(--on)}
+.tile .pt{position:absolute;inset:0;width:100%;height:100%;background:none;color:inherit;border-radius:12px;font-weight:700;font-size:clamp(64px,25vw,130px);line-height:1;font-variant-numeric:tabular-nums;padding-top:6px}
+.tile .mn{position:absolute;left:6px;bottom:6px;width:44px;height:44px;border-radius:10px;background:rgba(0,0,0,.28);color:inherit;font-size:26px;line-height:1;font-weight:500}
+.tile .sets{position:absolute;left:0;right:0;top:8px;text-align:center;font-size:13px;font-weight:500;letter-spacing:.04em;pointer-events:none;opacity:.9}
+.centerbtns{display:flex;flex-direction:column;gap:10px}
+.y{background:var(--yellow);color:var(--on-yellow);font-weight:500}
+.centerbtns .y{flex:1;font-size:21px;line-height:1.15;padding:8px 6px}
+.centerbtns .bo{flex:0 0 auto;height:60px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;font-weight:700;font-size:19px}
+.knob{width:46px;height:26px;border-radius:13px;background:rgba(0,0,0,.35);position:relative;flex:0 0 auto}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--on-yellow);transition:transform .15s}
+.bo[aria-pressed="true"] .knob::after{transform:translateX(20px)}
+
+/* Commandes */
+.ctl{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:10px}
+.ctl button{height:64px;font-size:22px;font-weight:500}
+.clr{background:#fff;color:#111}
+.stp{background:var(--stop);color:var(--on-stop)}
+.armed{background:var(--card)!important;color:var(--on-card)!important}
+.go{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.go button{height:clamp(110px,34vw,170px);background:var(--go);color:var(--on-go);font-weight:500;font-size:clamp(70px,24vw,110px);line-height:1;border-radius:14px;font-variant-numeric:tabular-nums}
+.end90{width:100%;height:60px;font-size:20px;font-weight:500;background:var(--panel);border:2px solid var(--go);color:var(--fg)}
+
+/* Pied */
+.foot{display:flex;flex-wrap:wrap;gap:8px}
+.foot button{flex:1 1 140px;min-height:46px;font-size:14px;font-weight:500;padding:6px 10px}
+.foot button[aria-pressed="true"]{background:#1f3a2a;color:#8be0ab}
+.foot button[aria-pressed="false"]{background:var(--panel);color:var(--muted)}
+.msg{margin:0;color:var(--muted);font-size:13px;min-height:1.3em}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+  var $ = function(s){ return document.querySelector(s); };
+  var KEY = 'arbitre-baby-v2';
+  var S = {
+    n:['Team 1','Team 2'], pts:[0,0], sets:[0,0], to:[0,0], warn:[0,0],
+    bo:5, vib:true, snd:true, log:[], gt:{ms:0, run:false, t0:0}
+  };
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && o.n && o.pts && o.pts.length === 2 && o.gt) { S = o; }
+    }
+  } catch(e) {}
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+  /* ---------- Squelette ---------- */
+  function sideHTML(i){
+    var segs = '';
+    for (var k = 0; k < 3; k++) segs += '<button data-to="'+i+':'+k+'" aria-label="Temps morts utilisés : '+k+'">'+k+'</button>';
+    return '<div class="side s'+i+'">'+
+      '<input class="nm" id="nm'+i+'" maxlength="12" aria-label="Nom de l\'équipe '+(i+1)+'">'+
+      '<div class="lab">Temps morts</div>'+
+      '<div class="seg" role="group">'+segs+'</div>'+
+      '<button class="warn-b" data-warn="'+i+'">Avert. '+(i+1)+'</button>'+
+      '<div class="dots" id="dots'+i+'"><i></i><i></i><i></i></div>'+
+    '</div>';
+  }
+  function tileHTML(i){
+    return '<div class="tile s'+i+'">'+
+      '<span class="sets" id="sets'+i+'"></span>'+
+      '<button class="pt" data-pt="'+i+'" id="pt'+i+'" aria-label="Ajouter un point">0</button>'+
+      '<button class="mn" data-mn="'+i+'" aria-label="Retirer un point">−</button>'+
+    '</div>';
+  }
+  $('#app').innerHTML =
+    '<div class="app">'+
+      '<button class="gt" id="gt" aria-label="Temps de jeu, toucher pour pause ou reprise">Temps de jeu 0:00</button>'+
+      '<section class="stage" id="stage" aria-label="Chrono">'+
+        '<div class="big" id="big">--</div>'+
+        '<div class="sub" id="sub">Choisis un chrono</div>'+
+      '</section>'+
+      '<section class="mid">'+ sideHTML(0) +
+        '<div class="logwrap"><ol class="log" id="log" aria-label="Historique"></ol></div>'+
+        sideHTML(1) +
+      '</section>'+
+      '<section class="score">'+ tileHTML(0) +
+        '<div class="centerbtns">'+
+          '<button class="y" id="resetPts">Points à 0</button>'+
+          '<button class="y bo" id="bo" aria-pressed="true"><span id="boTxt">Bo5</span><span class="knob"></span></button>'+
+        '</div>'+
+        tileHTML(1) +
+      '</section>'+
+      '<section class="ctl">'+
+        '<button class="clr" id="clear">Effacer</button>'+
+        '<button class="y" id="newSet">Nouveau set</button>'+
+        '<button class="stp" id="stop">Stop</button>'+
+      '</section>'+
+      '<section class="go">'+
+        '<button data-t="10" aria-label="Chrono 10 secondes">10</button>'+
+        '<button data-t="15" aria-label="Chrono 15 secondes">15</button>'+
+      '</section>'+
+      '<button class="end90" id="end90">Fin de set · 90 s</button>'+
+      '<section class="foot">'+
+        '<button id="vib" aria-pressed="true">Vibreur activé</button>'+
+        '<button id="snd" aria-pressed="true">Son activé</button>'+
+        '<button id="test">Tester vibreur et son</button>'+
+        '<button id="offline" hidden>Télécharger la version hors-ligne</button>'+
+        '<button id="resetAll">Tout remettre à zéro</button>'+
+      '</section>'+
+      '<p class="msg" id="msg"></p>'+
+    '</div>';
+
+  function nm(i){ return S.n[i] || ('Team ' + (i + 1)); }
+  function setMsg(t){ $('#msg').textContent = t || ''; }
+
+  /* ---------- Journal ---------- */
+  function addLog(t){
+    S.log.unshift(t);
+    if (S.log.length > 60) S.log.length = 60;
+    renderLog(); save();
+  }
+  function renderLog(){
+    var ol = $('#log');
+    if (!S.log.length) { ol.innerHTML = '<li class="empty">Aucun événement</li>'; return; }
+    ol.innerHTML = '';
+    S.log.forEach(function(t){ var li = document.createElement('li'); li.textContent = t; ol.appendChild(li); });
+  }
+
+  /* ---------- Affichage des compteurs ---------- */
+  function render(){
+    for (var i = 0; i < 2; i++) {
+      $('#pt'+i).textContent = S.pts[i];
+      $('#sets'+i).textContent = 'MANCHES ' + S.sets[i];
+      var segs = document.querySelectorAll('[data-to^="'+i+':"]');
+      for (var k = 0; k < segs.length; k++) {
+        segs[k].classList.toggle('on', k === 0 ? S.to[i] === 0 : S.to[i] >= k);
+      }
+      var dots = $('#dots'+i).children;
+      for (var d = 0; d < 3; d++) dots[d].classList.toggle('on', d < S.warn[i]);
+    }
+    $('#bo').setAttribute('aria-pressed', S.bo === 5);
+    $('#boTxt').textContent = 'Bo' + S.bo;
+    $('#vib').setAttribute('aria-pressed', S.vib);
+    $('#vib').textContent = S.vib ? 'Vibreur activé' : 'Vibreur coupé';
+    $('#snd').setAttribute('aria-pressed', S.snd);
+    $('#snd').textContent = S.snd ? 'Son activé' : 'Son coupé';
+  }
+  for (var q = 0; q < 2; q++) {
+    (function(i){
+      var inp = $('#nm'+i);
+      inp.value = S.n[i];
+      inp.addEventListener('input', function(){ S.n[i] = inp.value; save(); });
+    })(q);
+  }
+
+  /* ---------- Vibreur, son, écran ---------- */
+  function buzz(p){
+    if (!S.vib) return null;
+    var ok = false;
+    try { if (navigator.vibrate) ok = navigator.vibrate(p); } catch(e) { ok = false; }
+    return ok;
+  }
+  var ac = null;
+  function unlock(){
+    try {
+      if (!ac) { var C = window.AudioContext || window.webkitAudioContext; if (C) ac = new C(); }
+      if (ac && ac.state === 'suspended') ac.resume();
+    } catch(e) {}
+  }
+  function beep(){
+    if (!S.snd || !ac) return;
+    try {
+      var t0 = ac.currentTime;
+      [0, 0.28, 0.56].forEach(function(d, k){
+        var o = ac.createOscillator(), g = ac.createGain();
+        o.type = 'square'; o.frequency.value = k === 2 ? 1100 : 880;
+        g.gain.setValueAtTime(0.0001, t0 + d);
+        g.gain.exponentialRampToValueAtTime(0.3, t0 + d + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + d + 0.22);
+        o.connect(g); g.connect(ac.destination);
+        o.start(t0 + d); o.stop(t0 + d + 0.25);
+      });
+    } catch(e) {}
+  }
+  var wl = null;
+  function wake(){
+    try {
+      if (navigator.wakeLock && !wl) {
+        navigator.wakeLock.request('screen').then(function(l){
+          wl = l; l.addEventListener('release', function(){ wl = null; });
+        }).catch(function(){});
+      }
+    } catch(e) {}
+  }
+
+  /* ---------- Temps de jeu ---------- */
+  function gtNow(){ return S.gt.ms + (S.gt.run ? Date.now() - S.gt.t0 : 0); }
+  function gtFmt(ms){
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60), r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+  }
+  var lastGT = '';
+  function renderGT(){
+    var t = gtFmt(gtNow());
+    var key = t + S.gt.run;
+    if (key === lastGT) return;
+    lastGT = key;
+    var b = $('#gt');
+    b.textContent = 'Temps de jeu ' + t + (S.gt.run ? '' : ' · pause');
+    b.classList.toggle('off', !S.gt.run);
+  }
+  function startGT(){
+    if (!S.gt.run && S.gt.ms === 0) { S.gt.run = true; S.gt.t0 = Date.now(); save(); }
+  }
+  $('#gt').addEventListener('click', function(){
+    if (S.gt.run) { S.gt.ms = gtNow(); S.gt.run = false; }
+    else { S.gt.t0 = Date.now(); S.gt.run = true; }
+    save(); renderGT();
+  });
+
+  /* ---------- Chrono ---------- */
+  var stage = $('#stage'), big = $('#big'), sub = $('#sub');
+  var T = null;
+  function fmt(ms){
+    var t = Math.ceil(ms / 100), s = Math.floor(t / 10), d = t % 10;
+    var main = s >= 60 ? Math.floor(s / 60) + ':' + (s % 60 < 10 ? '0' : '') + (s % 60) : String(s);
+    return main + '.' + d;
+  }
+  function curRem(){ return T.paused ? T.rem : Math.max(0, T.end - Date.now()); }
+  function renderTimer(){
+    if (!T) {
+      stage.className = 'stage'; big.className = 'big';
+      big.textContent = '--'; sub.textContent = 'Choisis un chrono';
+      return;
+    }
+    var rem = T.done ? 0 : curRem();
+    var txt = fmt(rem);
+    big.textContent = txt;
+    big.className = 'big' + (txt.length > 5 ? ' long' : '');
+    var cls = 'stage';
+    if (T.done) cls += ' done';
+    else if (T.paused) cls += ' paused';
+    else if (rem <= 3000) cls += ' warn';
+    if (stage.className !== cls) stage.className = cls;
+    sub.textContent = T.done ? T.name + ' · temps écoulé'
+      : T.paused ? T.name + ' · en pause (touche pour reprendre)'
+      : T.name + ' · touche pour mettre en pause';
+  }
+  function startTimer(sec, name){
+    unlock(); wake(); startGT();
+    if (T && !T.done) addLog(T.name + ' interrompu à ' + fmt(curRem()) + ' s');
+    T = { total: sec * 1000, end: Date.now() + sec * 1000, rem: sec * 1000, paused: false, done: false, name: name };
+    renderTimer();
+  }
+  function tick(){
+    if (!T || T.paused || T.done) return;
+    if (curRem() <= 0) { finish(); return; }
+    renderTimer();
+  }
+  function finish(){
+    T.done = true;
+    addLog(T.name + ' : TEMPS ! 0.0 s');
+    renderTimer();
+    buzz([500, 120, 500, 120, 900]);
+    beep();
+  }
+  stage.addEventListener('click', function(){
+    if (!T || T.done) return;
+    if (!T.paused) { T.rem = curRem(); T.paused = true; }
+    else { T.end = Date.now() + T.rem; T.paused = false; }
+    renderTimer();
+  });
+  $('#stop').addEventListener('click', function(){
+    if (!T) return;
+    if (!T.done) addLog(T.name + ' arrêté à ' + fmt(curRem()) + ' s');
+    T = null; renderTimer();
+  });
+  setInterval(function(){ tick(); renderGT(); }, 50);
+  document.addEventListener('visibilitychange', function(){
+    if (document.visibilityState === 'visible') { tick(); renderGT(); if (T && !T.done && !T.paused) wake(); }
+  });
+
+  /* ---------- Actions ---------- */
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('button');
+    if (!b) return;
+    var d = b.dataset;
+    if (d.t) {
+      startTimer(+d.t, 'Chrono ' + d.t + ' s');
+    } else if (d.pt !== undefined) {
+      var i = +d.pt; unlock(); startGT();
+      S.pts[i] += 1; render();
+      addLog('But ' + nm(i) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+    } else if (d.mn !== undefined) {
+      var j = +d.mn;
+      if (S.pts[j] > 0) {
+        S.pts[j] -= 1; render();
+        addLog('Correction ' + nm(j) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+      }
+    } else if (d.to) {
+      var p = d.to.split(':'), t = +p[0], k = +p[1];
+      if (k === 0) { S.to[t] = 0; render(); save(); }
+      else if (S.to[t] >= k) { S.to[t] = k - 1; render(); save(); }
+      else {
+        S.to[t] = k; render();
+        addLog('Temps mort ' + nm(t) + ' (' + k + '/2) · 30 s');
+        startTimer(30, 'Temps mort ' + nm(t));
+      }
+    } else if (d.warn !== undefined) {
+      var w = +d.warn;
+      S.warn[w] = (S.warn[w] + 1) % 4; render();
+      if (S.warn[w] > 0) addLog('Avertissement ' + nm(w) + ' (' + S.warn[w] + ')');
+      else save();
+    }
+  });
+  $('#end90').addEventListener('click', function(){ startTimer(90, 'Fin de set'); });
+  $('#clear').addEventListener('click', function(){ S.log = []; renderLog(); save(); });
+  $('#bo').addEventListener('click', function(){ S.bo = S.bo === 5 ? 3 : 5; render(); save(); });
+
+  function confirmable(btn, armedText, fn){
+    var original = btn.textContent, armed = false, to = null;
+    function disarm(){ armed = false; btn.classList.remove('armed'); btn.textContent = original; clearTimeout(to); }
+    btn.addEventListener('click', function(){
+      if (!armed) { armed = true; btn.classList.add('armed'); btn.textContent = armedText; to = setTimeout(disarm, 3500); }
+      else { disarm(); fn(); }
+    });
+  }
+  confirmable($('#resetPts'), 'Confirmer ?', function(){
+    S.pts = [0, 0]; render(); addLog('Points remis à 0');
+  });
+  confirmable($('#newSet'), 'Confirmer ?', function(){
+    var a = S.pts[0], b = S.pts[1], need = S.bo === 5 ? 3 : 2, started = false;
+    if (a !== b) {
+      var w = a > b ? 0 : 1;
+      S.sets[w] += 1;
+      addLog('Set ' + (S.sets[0] + S.sets[1]) + ' : ' + nm(w) + ' gagne ' + a + ' - ' + b);
+      if (S.sets[w] >= need) addLog('MATCH : ' + nm(w) + ' gagne ' + S.sets[0] + ' - ' + S.sets[1]);
+      else started = true;
+    } else {
+      addLog('Nouveau set (égalité ' + a + ' - ' + b + ', aucune manche attribuée)');
+    }
+    S.pts = [0, 0]; S.to = [0, 0]; S.warn = [0, 0];
+    render(); save();
+    if (started) startTimer(90, 'Fin de set');
+  });
+  confirmable($('#resetAll'), 'Confirmer ?', function(){
+    S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.log = [];
+    S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
+    T = null; renderTimer(); render(); renderLog(); renderGT(); save();
+  });
+
+  /* ---------- Réglages ---------- */
+  $('#vib').addEventListener('click', function(){ S.vib = !S.vib; render(); save(); if (S.vib) buzz(120); });
+  $('#snd').addEventListener('click', function(){ S.snd = !S.snd; unlock(); render(); save(); if (S.snd) beep(); });
+  $('#test').addEventListener('click', function(){
+    unlock(); beep();
+    var ok = buzz([300, 100, 300]);
+    if (ok === null) setMsg('Le vibreur est coupé. Réactive-le avec le bouton au-dessus.');
+    else if (ok) setMsg('Vibration envoyée. Si rien ne bouge, le téléphone ou le navigateur la bloque.');
+    else setMsg('Vibration bloquée dans cette page. Ouvre l\'appli directement dans Chrome.');
+  });
+
+  render(); renderLog(); renderTimer(); renderGT();
+})();
+</script>
+</body>
+</html>
