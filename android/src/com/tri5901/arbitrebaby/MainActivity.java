@@ -31,7 +31,12 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /*
  * Arbitre Baby en appli Android : affiche le site en ligne dans une WebView et ajoute
@@ -47,7 +52,7 @@ public class MainActivity extends Activity {
     private static final String HOST = "arbitre-baby.vercel.app";
     private static final String FALLBACK = "file:///android_asset/index.html";
     // À monter avec versionCode (AndroidManifest.xml) et "apk" dans version.json
-    private static final int VERSION_APK = 3;
+    private static final int VERSION_APK = 4;
     private static final String CORAL = "https://app.tablesoccer.org/p/";
     // Nombre d'essais (un par seconde) avant de déclarer le tournoi introuvable
     private static final int CORAL_ESSAIS = 30;
@@ -196,9 +201,57 @@ public class MainActivity extends Activity {
             coralCode = code;
             coral.loadUrl(CORAL + code);
         }
-        final String script = lireAsset("coral.js")
-            .replace("__CODE__", JSONObject.quote(code)).replace("__TABLE__", JSONObject.quote(table));
-        extraire(script, ++coralDemande, 0);
+        final int demande = ++coralDemande;
+        final String c = code;
+        // Téléchargement du script hors du fil de l'interface, puis lecture du match sur le fil de l'interface
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final String script = scriptCoral()
+                    .replace("__CODE__", JSONObject.quote(c)).replace("__TABLE__", JSONObject.quote(table));
+                ui.post(new Runnable() {
+                    @Override
+                    public void run() { extraire(script, demande, 0); }
+                });
+            }
+        }).start();
+    }
+
+    // coral.js : d'abord la version du site (pour corriger la lecture Coral sans refaire l'APK),
+    // gardée dans un fichier du téléphone ; sans réseau, la dernière gardée ; sinon celle de l'APK.
+    private String scriptCoral() {
+        File garde = new File(getFilesDir(), "coral.js");
+        try {
+            HttpURLConnection cx = (HttpURLConnection) new URL(SITE + "coral.js?t=" + System.currentTimeMillis()).openConnection();
+            cx.setConnectTimeout(4000);
+            cx.setReadTimeout(4000);
+            if (cx.getResponseCode() == 200) {
+                String s = lireFlux(cx.getInputStream());
+                if (s.contains("__CODE__") && s.contains("__TABLE__")) {
+                    FileOutputStream out = new FileOutputStream(garde);
+                    out.write(s.getBytes("UTF-8"));
+                    out.close();
+                    return s;
+                }
+            }
+        } catch (Exception e) {
+            // pas de réseau : on passe à la copie gardée
+        }
+        try {
+            if (garde.exists()) return lireFlux(new FileInputStream(garde));
+        } catch (Exception e) {
+            // copie illisible : on prend celle de l'APK
+        }
+        return lireAsset("coral.js");
+    }
+
+    private String lireFlux(InputStream in) throws java.io.IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] b = new byte[4096];
+        int n;
+        while ((n = in.read(b)) > 0) out.write(b, 0, n);
+        in.close();
+        return out.toString("UTF-8");
     }
 
     private void extraire(final String script, final int demande, final int essai) {
@@ -222,13 +275,7 @@ public class MainActivity extends Activity {
 
     private String lireAsset(String nom) {
         try {
-            InputStream in = getAssets().open(nom);
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            byte[] b = new byte[4096];
-            int n;
-            while ((n = in.read(b)) > 0) out.write(b, 0, n);
-            in.close();
-            return out.toString("UTF-8");
+            return lireFlux(getAssets().open(nom));
         } catch (Exception e) {
             return "null";
         }

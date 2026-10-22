@@ -42,7 +42,7 @@ body{
 }
 .app{
   max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;
-  display:grid;grid-template-rows:auto auto minmax(190px,1fr) auto auto auto auto auto auto;gap:8px;
+  display:grid;grid-template-rows:auto auto minmax(190px,1fr) auto auto auto auto auto;gap:8px;
   padding-top:max(6px,env(safe-area-inset-top,0px));
   padding-bottom:max(8px,env(safe-area-inset-bottom,0px));
   padding-left:max(12px,env(safe-area-inset-left,0px));
@@ -74,6 +74,13 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 .stage.done .sub{color:inherit;font-weight:700}
 .stage.done .bar{opacity:0}
 @keyframes blink{50%{background:var(--surface);color:var(--fg)}}
+/* Table en cours (match Coral), en haut à droite de la carte du chrono ; clignote au changement de table */
+.tbadge{position:absolute;top:8px;right:12px;font:700 11px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+  background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:999px;padding:4px 8px;pointer-events:none}
+.tbadge[hidden]{display:none}
+.tbadge.bip{animation:bip .4s steps(1) 5}
+@keyframes bip{50%{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}}
+@media (prefers-reduced-motion:reduce){.tbadge.bip{animation:none;background:var(--accent);color:var(--on-accent)}}
 @media (prefers-reduced-motion:reduce){.stage.done{animation:none}}
 
 /* Équipes et historique */
@@ -90,6 +97,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   font-family:var(--num);font-weight:800;font-size:clamp(28px,5dvh,40px);line-height:1;color:var(--muted)}
 .seg button.on{background:linear-gradient(180deg,var(--ta),var(--tb));border:1.5px solid transparent;color:var(--on)}
 .seg button.on::after{content:"✓";position:absolute;top:4px;right:6px;font:700 12px/1 var(--font)}
+/* Format à un seul temps mort (relais, certains formats Coral) : une seule grande case */
+.seg.un{grid-template-columns:1fr}
+.seg.un button:nth-child(2){display:none}
 .warn-b{height:36px;background:transparent;border:1.5px solid var(--tc);color:var(--tc);font-weight:700;font-size:14px;border-radius:11px;padding:0 4px}
 .dots{display:flex;justify-content:center;gap:10px;align-items:center;height:16px}
 .dots i{width:13px;height:18px;border-radius:3px;background:var(--surface-3)}
@@ -156,7 +166,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 .foot button{flex:1 1 0;min-width:0;min-height:34px;font-size:12px;font-weight:600;padding:4px 4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:#c9ced5}
 .foot button[aria-pressed="true"]{background:rgba(43,200,102,.12);border-color:rgba(43,200,102,.35);color:#8be0ab}
 .foot button[aria-pressed="false"]{color:var(--muted)}
-.msg{margin:0;color:var(--muted);font-size:12px;white-space:pre-line}
+/* Message : bulle flottante au-dessus des boutons du bas (ne pousse plus la mise en page sur les petits écrans) */
+/* posée sur la ligne Vibreur / Son / Tester ; les appuis la traversent (sauf sur un lien) et elle s'efface seule */
+.msg{position:fixed;left:12px;right:12px;bottom:max(6px,env(safe-area-inset-bottom,0px));z-index:6;max-width:536px;margin:0 auto;
+  padding:9px 12px;border-radius:12px;background:var(--surface-3);border:1px solid rgba(255,255,255,.12);color:#e6e9ee;font-size:12.5px;
+  box-shadow:0 8px 24px rgba(0,0,0,.55);white-space:pre-line;pointer-events:none}
+.msg a{pointer-events:auto}
 .msg a{color:var(--accent);font-weight:700}
 .clr:disabled{opacity:.35;cursor:default}
 #newSet{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
@@ -172,16 +187,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 .panel label{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
 .panel input{flex:1;min-width:0;height:44px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:var(--bg);color:var(--fg);padding:0 12px;font:600 16px/1 var(--font)}
 .panel #cCode{text-transform:uppercase}
-.panel #cTable{flex:0 0 76px;text-align:center}
-.panel label:first-of-type{flex-direction:column;align-items:stretch;gap:6px}
+.panel #cTable{flex:0 0 76px;text-align:center}.panel label:first-of-type{flex-direction:column;align-items:stretch;gap:6px}
 .panel label:first-of-type input{flex:none}
 .panel .cgo{justify-content:center;background:linear-gradient(180deg,var(--go-a),var(--go-b));color:var(--on-go);font-weight:800;font-size:16px}
 .panel .cferme{justify-content:center;color:var(--muted);height:38px}
 .cetat{margin:0;font-size:13px;color:#c9ced5;white-space:pre-line}
 .cetat:empty{display:none}
 .cetat a{color:var(--accent);font-weight:700}
-.nm.long{font-size:16px}
-.nm.tlong{font-size:13px}
+.nm.long{font-size:17px;letter-spacing:.01em}
+.nm.tlong{font-size:14px;letter-spacing:0}
+.nm.xlong{font-size:11.5px;letter-spacing:0}
 .msg:empty{display:none}
 
 @media (max-height:800px){
@@ -216,7 +231,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 (function(){
   var $ = function(s){ return document.querySelector(s); };
   // Version du site : dernier chiffre +1 à chaque livraison
-  var VERSION = 'V1.0.2';
+  var VERSION = 'V1.0.3';
   var KEY = 'arbitre-baby-v2';
   // Dans l'appli Android, le pont ArbitreApp existe : on affiche l'aide des boutons de volume.
   var inApp = !!window.ArbitreApp;
@@ -233,6 +248,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     }
   } catch(e) {}
   if (!S.manches) S.manches = [];
+  // Match Coral : S.relais (paliers, élément en cours), S.compo (joueurs par élément), S.clubs, S.tables,
+  // S.tm / S.tmDuree (temps morts du format) ; absents = match classique, 2 temps morts de 30 s
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
 
   /* ---------- Annuler : une photo de l'état avant chaque action ---------- */
@@ -267,6 +284,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
         '<div class="big" id="big">--</div>'+
         '<div class="sub" id="sub">Choisis un chrono</div>'+
         '<div class="bar"><i id="bar"></i></div>'+
+        '<span class="tbadge" id="tbadge" hidden></span>'+
       '</section>'+
       '<section class="mid">'+ sideHTML(0) +
         '<div class="logwrap"><ol class="log" id="log" aria-label="Historique"></ol></div>'+
@@ -328,6 +346,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   // Équipe qui a gagné la manche en cours, sinon -1 : 5 points ; à la belle, règle S.regle
   // (par défaut 2 points d'écart, 8 maximum, comme le règlement simplifié FFBF ; sinon celle du format Coral)
   function gagnantManche(){
+    if (S.relais) return -1;  // relais : les éléments s'enchaînent tout seuls aux paliers
     var a = S.pts[0], b = S.pts[1], hi = Math.max(a, b), need = besoin();
     var r = S.regle || { win: 5, diff: 2, max: 8 };
     var belle = S.sets[0] === need - 1 && S.sets[1] === need - 1;
@@ -337,7 +356,79 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     if (Math.abs(a - b) < r.diff && !(r.max && hi >= r.max)) return -1;
     return a > b ? 0 : 1;
   }
-  function setMsg(t){ $('#msg').textContent = t || ''; }
+  // La bulle s'efface seule : 7 s, ou 25 s pour un texte long (résumé à recopier quand la copie a échoué)
+  var msgMinuteur = null;
+  function effacerMsgDans(ms){
+    clearTimeout(msgMinuteur);
+    msgMinuteur = setTimeout(function(){ $('#msg').textContent = ''; }, ms);
+  }
+  function setMsg(t){
+    $('#msg').textContent = t || '';
+    if (t) effacerMsgDans(t.length < 160 ? 7000 : 25000);
+  }
+
+  /* ---------- Relais (format Coral « Race to 30 - D/D/S/S/D »…) ---------- */
+  // Un seul score cumulé ; l'élément passe au suivant dès qu'une équipe atteint son palier (6, 12, 18…)
+  function typeEl(p){
+    var c = (p.cat || '').toLowerCase();
+    if (/single|simple/.test(c)) return 'S';
+    if (/double|mixed|mixte/.test(c)) return 'D';
+    return p.nb === 1 ? 'S' : 'D';
+  }
+  // Nom court de l'élément k : D1, D2, S1, S2, D3…
+  function libEl(k){
+    var p = S.relais.paliers, lettre = typeEl(p[k]), n = 0;
+    for (var j = 0; j <= k; j++) if (typeEl(p[j]) === lettre) n++;
+    return lettre + n;
+  }
+  // Les cases de nom montrent qui joue l'élément en cours (sinon le club)
+  function nomsElement(){
+    var c = S.compo && S.compo[S.relais.el];
+    for (var i = 0; i < 2; i++) {
+      S.n[i] = (c && nomEquipe(i ? c.away : c.home)) || (S.clubs && S.clubs[i]) || S.n[i];
+      $('#nm'+i).value = S.n[i];
+    }
+  }
+  function equipe(i){ return S.clubs && S.clubs[i] ? S.clubs[i] : nm(i); }
+  function passerElement(){
+    var r = S.relais;
+    addLog('Fin ' + libEl(r.el) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+    r.el++;
+    if (r.tmType === 'game') S.to = [0, 0];
+    nomsElement(); render();
+    startTimer(r.pause || 180, 'Entre éléments'); lieChrono();
+    addLog('Élément ' + libEl(r.el) + ' : ' + nm(0) + ' contre ' + nm(1) + ' · jusqu\'à ' + r.paliers[r.el].val);
+  }
+  // Dernier élément : nul à « nul »-« nul » si le format le prévoit, sinon victoire au palier final avec l'écart demandé
+  function finRelais(){
+    var r = S.relais, a = S.pts[0], b = S.pts[1], hi = Math.max(a, b), val = r.paliers[r.paliers.length - 1].val;
+    if (r.nul && a === r.nul && b === r.nul) return 'MATCH NUL ' + a + ' - ' + b;
+    if (hi >= val && (Math.abs(a - b) >= (r.ecart || 1) || (r.max && hi >= r.max))) return 'MATCH : ' + equipe(a > b ? 0 : 1) + ' gagne ' + a + ' - ' + b;
+    return null;
+  }
+
+  /* ---------- Table en cours ---------- */
+  // Match sur 2 tables (règle ITSF League) : 1re balle sur la 1re table, puis 2 balles en alternance sur chaque table
+  // jusqu'à la fin du match : balles 2-3 sur la 2e table, 4-5 sur la 1re, 6-7 sur la 2e…
+  // (c'est le réglage Coral playground_swap « 12 »). Balle n° n = points joués sur tout le match + 1.
+  function multiTables(){ return !!(S.tables && S.tables.length === 2); }
+  function tableCourante(){
+    if (multiTables()) {
+      var n = S.pts[0] + S.pts[1] + 1;
+      if (!S.relais) S.manches.forEach(function(m){ n += m[0] + m[1]; });
+      if (n === 1) return S.tables[0].num;
+      return S.tables[Math.floor((n - 2) / 2) % 2 === 0 ? 1 : 0].num;
+    }
+    return (S.tables && S.tables[0] && S.tables[0].num) || (S.coral && S.coral.comp && S.coral.table) || '';
+  }
+  function annonceTable(avant){
+    var apres = tableCourante();
+    if (!multiTables() || !avant || String(avant) === String(apres)) return;
+    addLog('Changement de table → ' + apres);
+    buzz([150, 80, 150]);
+    var tb = $('#tbadge');
+    tb.classList.remove('bip'); void tb.offsetWidth; tb.classList.add('bip');
+  }
 
   /* ---------- Journal ---------- */
   function addLog(t){
@@ -359,13 +450,22 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       $('#pt'+i).textContent = S.pts[i];
       // Noms longs (doubles venus de Coral) : police plus petite pour tout voir
       var nmi = $('#nm'+i), ln = nmi.value.length;
-      nmi.classList.toggle('long', ln > 10 && ln <= 15);
-      nmi.classList.toggle('tlong', ln > 15);
-      // Manches : une pastille par manche à gagner, pleine quand elle est gagnée
-      var pips = '<b>MANCHES</b>';
-      for (var m = 0; m < Math.max(need, S.sets[i]); m++) pips += '<i' + (m < S.sets[i] ? ' class="on"' : '') + '></i>';
-      $('#sets'+i).innerHTML = pips;
-      $('#sets'+i).setAttribute('aria-label', 'Manches gagnées : ' + S.sets[i]);
+      nmi.classList.toggle('long', ln > 8 && ln <= 11);
+      nmi.classList.toggle('tlong', ln > 11 && ln <= 16);
+      nmi.classList.toggle('xlong', ln > 16);
+      if (S.relais) {
+        // Relais : élément en cours et son palier (ex. « D2 → 12 »), « FIN » quand le match est terminé
+        var rl = S.relais;
+        $('#sets'+i).innerHTML = rl.fin ? '<b>FIN</b>' : '<b>' + libEl(rl.el) + '</b>→ ' + rl.paliers[rl.el].val;
+        $('#sets'+i).setAttribute('aria-label', rl.fin ? 'Match terminé' : 'Élément ' + (rl.el + 1) + ' sur ' + rl.paliers.length + ', jusqu\'à ' + rl.paliers[rl.el].val);
+      } else {
+        // Manches : une pastille par manche à gagner, pleine quand elle est gagnée
+        var pips = '<b>MANCHES</b>';
+        for (var m = 0; m < Math.max(need, S.sets[i]); m++) pips += '<i' + (m < S.sets[i] ? ' class="on"' : '') + '></i>';
+        $('#sets'+i).innerHTML = pips;
+        $('#sets'+i).setAttribute('aria-label', 'Manches gagnées : ' + S.sets[i]);
+      }
+      document.querySelectorAll('.seg')[i].classList.toggle('un', (S.tm || 2) === 1);
       var segs = document.querySelectorAll('[data-to^="'+i+':"]');
       for (var k = 0; k < segs.length; k++) {
         segs[k].classList.toggle('on', S.to[i] >= k + 1);
@@ -379,11 +479,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     var ns = $('#newSet');
     if (!ns.classList.contains('armed')) {
       var g = gagnantManche();
-      ns.textContent = g < 0 ? 'Nouveau set' : 'Manche ' + nm(g);
+      ns.textContent = S.relais ? (S.relais.fin ? 'Terminé' : 'Élément →') : g < 0 ? 'Nouveau set' : 'Manche ' + nm(g);
       ns.classList.toggle('ready', g >= 0);
     }
     $('#bo').setAttribute('aria-pressed', S.bo === 5);
-    $('#boTxt').textContent = 'Bo' + S.bo;
+    // Relais : « R30 » = course à 30 points
+    $('#boTxt').textContent = S.relais ? 'R' + S.relais.paliers[S.relais.paliers.length - 1].val : 'Bo' + S.bo;
+    var tb = $('#tbadge'), tn = tableCourante();
+    tb.hidden = !tn;
+    tb.textContent = 'Table ' + tn + (multiTables() ? ' ⇄' : '');
     $('#vib').setAttribute('aria-pressed', S.vib);
     $('#vib').textContent = S.vib ? 'Vibreur : oui' : 'Vibreur : non';
     // « 12 s partout » (possession 12 s sur toutes les barres à partir de janvier 2027) : un seul gros bouton 12 s.
@@ -553,28 +657,47 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       startTimer(sec, d.name || 'Chrono ' + sec + ' s');
       if (d.log) addLog(d.log);
     } else if (d.pt !== undefined) {
-      var i = +d.pt;
+      var i = +d.pt, avantT = tableCourante();
+      if (S.relais && S.relais.fin) return;
       snap();
       S.pts[i] += 1; render();
+      var rl = S.relais;
+      if (rl) {
+        // Relais : palier atteint → élément suivant (noms, temps morts, pause entre éléments) ; dernier palier → fin
+        if (rl.el < rl.paliers.length - 1 && S.pts[i] >= rl.paliers[rl.el].val) {
+          pile[pile.length - 1].noms = true;
+          addLog('But ' + nm(i) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+          passerElement(); annonceTable(avantT);
+          return;
+        }
+        var fin = rl.el === rl.paliers.length - 1 && finRelais();
+        if (fin) {
+          addLog('But ' + nm(i) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+          rl.fin = true; addLog(fin); render(); buzz([300, 100, 300]);
+          return;
+        }
+      }
       // Chaque but lance la pause entre les points, 5 s max (règles ITSF art. 7.1.1.1) ;
       // lancée avant le journal pour que le but reste en tête
       startTimer(5, 'Après but'); lieChrono();
       addLog('But ' + nm(i) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+      annonceTable(avantT);
     } else if (d.mn !== undefined) {
-      var j = +d.mn;
+      var j = +d.mn, avantC = tableCourante();
       if (S.pts[j] > 0) {
         snap();
         S.pts[j] -= 1; render();
         addLog('Correction ' + nm(j) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
+        annonceTable(avantC);
       }
     } else if (d.to) {
-      var p = d.to.split(':'), t = +p[0], k = +p[1];
+      var p = d.to.split(':'), t = +p[0], k = +p[1], duree = S.tmDuree || 30;
       snap();
       if (S.to[t] >= k) { S.to[t] = k - 1; render(); save(); }
       else {
         S.to[t] = k; render();
-        addLog('Temps mort ' + nm(t) + ' (' + k + '/2) · 30 s');
-        startTimer(30, 'Temps mort ' + nm(t)); lieChrono();
+        addLog('Temps mort ' + nm(t) + ' (' + k + '/' + (S.tm || 2) + ') · ' + duree + ' s');
+        startTimer(duree, 'Temps mort ' + nm(t)); lieChrono();
       }
     } else if (d.warn !== undefined) {
       var w = +d.warn;
@@ -606,9 +729,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     if (!e) return;
     // On garde le temps de jeu, les noms et les réglages tels qu'ils sont maintenant,
     // sauf pour l'annulation d'un match Coral chargé (e.complet) : tout revient comme avant
+    // (e.noms : passage d'élément en relais, les noms de l'élément précédent reviennent aussi)
     var cur = S;
     S = JSON.parse(e.s);
-    if (!e.complet) { S.gt = cur.gt; S.n = cur.n; }
+    if (!e.complet) S.gt = cur.gt;
+    if (!e.complet && !e.noms) S.n = cur.n;
     S.vib = cur.vib; S.snd = cur.snd;
     if (e.t && T === e.t) T = null;
     $('#nm0').value = S.n[0]; $('#nm1').value = S.n[1]; lastGT = '';
@@ -620,6 +745,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     var need = besoin(), l = [], c = S.coral;
     l.push('Arbitre Baby · ' + new Date().toLocaleDateString('fr-FR'));
     if (c && c.comp) l.push(c.tournoi + ' · ' + c.comp + (c.phase ? ' · ' + c.phase : '') + ' · table ' + c.table);
+    if (multiTables()) l.push('Tables ' + S.tables[0].num + ' et ' + S.tables[1].num + ' (1 balle puis 2 balles en alternance)');
+    if (S.relais) {
+      var rl = S.relais;
+      l.push(equipe(0) + ' ' + S.pts[0] + ' - ' + S.pts[1] + ' ' + equipe(1) + ' (relais à ' + rl.paliers[rl.paliers.length - 1].val + ')');
+      l.push('Éléments : ' + rl.paliers.map(function(p, k){ return libEl(k) + ' ' + p.val; }).join(' · '));
+      l.push(rl.fin ? 'Match terminé' : 'Élément en cours : ' + libEl(rl.el) + ' (' + nm(0) + ' contre ' + nm(1) + ')');
+      l.push('Temps de jeu : ' + gtFmt(gtNow()));
+      return l.join('\n');
+    }
+    if (S.clubs) l.push('Équipes : ' + S.clubs[0] + ' contre ' + S.clubs[1]);
     l.push(nm(0) + ' ' + S.sets[0] + ' - ' + S.sets[1] + ' ' + nm(1) + ' (Bo' + S.bo + ')');
     S.manches.forEach(function(m, k){ l.push('Manche ' + (k + 1) + ' : ' + m[0] + ' - ' + m[1]); });
     if (S.pts[0] || S.pts[1]) l.push('Manche en cours : ' + S.pts[0] + ' - ' + S.pts[1]);
@@ -652,6 +787,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   });
   confirmable($('#newSet'), 'Confirmer ?', function(){
     var a = S.pts[0], b = S.pts[1], need = besoin(), started = false;
+    // Relais : passage manuel à l'élément suivant (si le palier n'a pas été marqué ici) ; rien après la fin
+    if (S.relais) {
+      if (S.relais.fin) { setMsg('Match terminé : charge le match suivant (Match Coral) ou touche « Tout à zéro ».'); return; }
+      if (S.relais.el >= S.relais.paliers.length - 1) { setMsg('C\'est déjà le dernier élément.'); return; }
+      snap(); pile[pile.length - 1].noms = true;
+      passerElement();
+      return;
+    }
     snap();
     if (a !== b) {
       var w = a > b ? 0 : 1;
@@ -671,7 +814,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     snap();
     S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.log = []; S.manches = [];
     // On garde le tournoi et la table pour le prochain match Coral, pas le match lui-même
-    delete S.regle;
+    delete S.regle; delete S.relais; delete S.compo; delete S.clubs; delete S.tables; delete S.tm; delete S.tmDuree;
     if (S.coral) S.coral = { code: S.coral.code, table: S.coral.table };
     S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
     T = null; renderTimer(); render(); renderLog(); renderGT(); save();
@@ -702,11 +845,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     panneau.hidden = !open;
     if (!open) return;
     $('#cCode').value = (S.coral && S.coral.code) || '';
-    $('#cTable').value = (S.coral && S.coral.table) || '';
-    etatCoral(coralOk ? '' : 'Le match Coral se lit dans l\'appli Android (version 3 ou plus récente). <a href="app.html">Télécharger l\'appli</a>');
+    $('#cTable').value = (S.coral && S.coral.table) || '';    etatCoral(coralOk ? '' : 'Le match Coral se lit dans l\'appli Android (version 3 ou plus récente). <a href="app.html">Télécharger l\'appli</a>');
   }
-  $('#coralBtn').addEventListener('click', function(){ ouvrirCoral(true); });
-  $('#cFermer').addEventListener('click', function(){ ouvrirCoral(false); });
+  $('#coralBtn').addEventListener('click', function(){ ouvrirCoral(true); });  $('#cFermer').addEventListener('click', function(){ ouvrirCoral(false); });
   document.addEventListener('click', function(e){
     if (!panneau.hidden && !panneau.contains(e.target) && !$('#coralBtn').contains(e.target)) ouvrirCoral(false);
   });
@@ -749,14 +890,28 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.manches = [];
     S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
     S.bo = m.bo; S.regle = m.regle;
-    S.n = [nomEquipe(m.home) || 'Team 1', nomEquipe(m.away) || 'Team 2'];
-    $('#nm0').value = S.n[0]; $('#nm1').value = S.n[1];
+    // Champs ajoutés par l'APK 4 (absents avec l'APK 3 : match classique, 2 temps morts de 30 s)
+    S.tm = m.tm || 2; S.tmDuree = m.tmDuree || 30;
+    S.tables = m.tables && m.tables.length ? m.tables : null;
+    S.clubs = m.clubs && m.clubs[0] ? m.clubs : null;
+    S.compo = m.compo && m.compo.length ? m.compo : null;
+    var rel = m.type === 'relay' && m.relais && m.relais.paliers && m.relais.paliers.length ? m.relais : null;
+    S.relais = rel ? { paliers: rel.paliers, pause: rel.pause || 180, tmType: rel.tmType, nul: rel.nul || 0, ecart: rel.ecart || 1, max: rel.max || 0, el: 0, fin: false } : null;
+    if (rel) { S.tm = rel.tm || S.tm; S.tmDuree = rel.tmDuree || S.tmDuree; }
+    // Équipe de club (plus de 2 joueurs) : le nom du club plutôt que la liste de tous les joueurs
+    var nomDe = function(l, i){ return (l && l.length && l.length <= 2 && nomEquipe(l)) || (S.clubs && S.clubs[i]) || nomEquipe(l) || ('Team ' + (i + 1)); };
+    S.n = [nomDe(m.home, 0), nomDe(m.away, 1)];
     S.coral = { code: r.code, table: r.table, tournoi: r.tournoi, comp: m.comp, phase: m.phase, match: m.id };
+    if (S.relais) nomsElement();
+    $('#nm0').value = S.n[0]; $('#nm1').value = S.n[1];
     T = null;
     renderTimer(); render(); renderGT(); coralLabel();
-    addLog('Coral · table ' + r.table + ' · ' + m.comp + ' : ' + S.n[0] + ' contre ' + S.n[1]);
+    addLog('Coral · table ' + tableCourante() + ' · ' + m.comp + ' : ' + equipe(0) + ' contre ' + equipe(1));
+    if (S.relais) addLog('Élément ' + libEl(0) + ' : ' + nm(0) + ' contre ' + nm(1) + ' · jusqu\'à ' + S.relais.paliers[0].val);
     ouvrirCoral(false);
-    setMsg((m.statut === 'created' ? 'Match à venir chargé' : 'Match chargé') + ' : ' + m.comp + (m.phase ? ' · ' + m.phase : '') + ' · Bo' + m.bo);
+    setMsg((m.statut === 'created' ? 'Match à venir chargé' : 'Match chargé') + ' : ' + m.comp + (m.phase ? ' · ' + m.phase : '') +
+      (S.relais ? ' · relais ' + S.relais.paliers.map(function(p, k){ return libEl(k); }).join('/') + ' jusqu\'à ' + S.relais.paliers[S.relais.paliers.length - 1].val : ' · Bo' + m.bo) +
+      (multiTables() ? ' · tables ' + S.tables[0].num + ' et ' + S.tables[1].num : ''));
   };
   coralLabel();
 
@@ -766,7 +921,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     var apkLocal = 1;
     try { if (typeof ArbitreApp.version === 'function') apkLocal = +ArbitreApp.version(); } catch(e) {}
     fetch('version.json', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(v){
-      if (v.apk > apkLocal) $('#msg').innerHTML = 'Nouvelle version de l\'appli Android disponible. <a href="' + v.apkUrl + '">Télécharger</a>';
+      if (v.apk > apkLocal) { $('#msg').innerHTML = 'Nouvelle version de l\'appli Android disponible. <a href="' + v.apkUrl + '">Télécharger</a>'; effacerMsgDans(20000); }
     }).catch(function(){});
   }
 
