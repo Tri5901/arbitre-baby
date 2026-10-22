@@ -21,15 +21,16 @@ if [ ! -f "$KS" ]; then
     -storepass "$(cat "$PASSFILE")" -keypass "$(cat "$PASSFILE")" -dname "CN=Arbitre Baby, O=Tri5901, C=FR"
 fi
 
-rm -rf out && mkdir -p out/res out/gen out/classes out/assets res/mipmap-xxxhdpi
+rm -rf out && mkdir -p out/res out/gen out/classes out/pkg/assets/fonts res/mipmap-xxxhdpi
 # Icônes et copie de secours de la page, reprises de la racine du dépôt
 cp ../icon-192.png res/mipmap-xxxhdpi/ic_launcher.png
 cp ../icon-maskable-512.png res/mipmap-xxxhdpi/ic_launcher_fg.png
-cp ../index.html ../manifest.json ../icon-192.png out/assets/
+cp ../index.html ../manifest.json ../icon-192.png out/pkg/assets/
+cp ../fonts/*.woff2 out/pkg/assets/fonts/
 
 "$BT/aapt2" compile --dir res -o out/res/res.zip
 "$BT/aapt2" link -o out/base.apk -I "$JAR" --manifest AndroidManifest.xml \
-  -A out/assets --java out/gen out/res/res.zip
+  --java out/gen out/res/res.zip
 
 javac -source 8 -target 8 -bootclasspath "$JAR" -Xlint:-options -encoding UTF-8 \
   -d out/classes $(find src out/gen -name '*.java')
@@ -37,6 +38,8 @@ javac -source 8 -target 8 -bootclasspath "$JAR" -Xlint:-options -encoding UTF-8 
 
 cp out/base.apk out/unsigned.apk
 (cd out && "$BT/aapt" add unsigned.apk classes.dex > /dev/null)
+# Copie de secours ajoutée avec des chemins en « / » (aapt2 -A met des « \ » sous Windows, illisibles par Android)
+(cd out/pkg && "$BT/aapt" add ../unsigned.apk $(find assets -type f) > /dev/null)
 "$BT/zipalign" -f -p 4 out/unsigned.apk out/aligned.apk
 "$BT/apksigner.bat" sign --ks "$(cygpath -w "$KS")" --ks-pass "file:$(cygpath -w "$PASSFILE")" --out out/arbitre-baby.apk out/aligned.apk
 "$BT/apksigner.bat" verify out/arbitre-baby.apk

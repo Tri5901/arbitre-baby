@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="description" content="Télécharger l'appli Android Arbitre Baby : chrono et score pour arbitrer au baby-foot">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Appli Arbitre Baby</title>
+<style>
+@font-face{font-family:Barlow;font-weight:500;font-display:swap;src:url(fonts/barlow-500.woff2) format('woff2')}
+@font-face{font-family:Barlow;font-weight:700;font-display:swap;src:url(fonts/barlow-700.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:800;font-display:swap;src:url(fonts/barlow-condensed-800.woff2) format('woff2')}
+:root{color-scheme:dark;--bg:#000;--fg:#f5f6f8;--muted:#8b929b;--line:rgba(255,255,255,.07);--surface:#111317;--surface-2:#1a1d22;
+  --t0:#ff7a1a;--go-a:#3ddc7e;--go-b:#17a54d;--on-go:#032712;--accent:#ffd23f}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:radial-gradient(120% 45% at 50% -8%,rgba(255,122,26,.15),transparent 70%),var(--bg);background-attachment:fixed;
+  color:var(--fg);font:500 16px/1.45 Barlow,system-ui,-apple-system,'Segoe UI',Arial,sans-serif}
+main{max-width:520px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 16px 32px}
+.head{text-align:center;margin-bottom:22px}
+.head img{width:96px;height:96px;border-radius:24px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+h1{font:800 44px/1 'Barlow Condensed',Barlow,sans-serif;letter-spacing:.01em;margin:14px 0 4px;text-transform:uppercase}
+.head p{margin:0;color:var(--muted)}
+.dl{display:block;text-align:center;text-decoration:none;border-radius:20px;padding:18px 16px;margin:6px 0 8px;
+  background:linear-gradient(180deg,var(--go-a),var(--go-b));color:var(--on-go);font:800 26px/1.1 'Barlow Condensed',Barlow,sans-serif;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 18px rgba(23,165,77,.25)}
+.dl small{display:block;font:700 13px/1.3 Barlow,sans-serif;opacity:.75;margin-top:4px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-top:14px}
+h2{font:700 13px/1 Barlow,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+ol,ul{margin:0;padding-left:22px}
+li{margin:6px 0}
+b{color:#fff}
+.web{display:block;text-align:center;margin-top:18px;color:var(--accent);font-weight:700;text-decoration:none}
+.note{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<main>
+  <div class="head">
+    <img src="icon-512.png" alt="">
+    <h1>Arbitre Baby</h1>
+    <p>Chrono et score pour arbitrer un match de baby-foot</p>
+  </div>
+
+  <a class="dl" id="dl" href="https://github.com/Tri5901/arbitre-baby/releases/latest/download/arbitre-baby.apk">
+    Télécharger l'appli Android
+    <small id="dlInfo">Fichier APK · Android 8 ou plus récent</small>
+  </a>
+
+  <div class="card">
+    <h2>Ce que l'appli ajoute</h2>
+    <ul>
+      <li><b>Volume +</b> lance le chrono 10 s, <b>volume −</b> le chrono 15 s.</li>
+      <li>Une vibration forte à la fin du temps, même en mode silencieux.</li>
+      <li>L'écran reste allumé pendant le match.</li>
+      <li>Elle fonctionne sans réseau et se met à jour toute seule.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>Installer</h2>
+    <ol>
+      <li>Touche le bouton vert, puis ouvre le fichier téléchargé.</li>
+      <li>Si Android bloque les « applis inconnues » : <b>Paramètres</b>, active <b>Autoriser depuis cette source</b>, puis reviens.</li>
+      <li>Touche <b>Installer</b>.</li>
+      <li>Si Play Protect affiche un avertissement : <b>Plus de détails</b> puis <b>Installer quand même</b> (l'appli ne vient pas du Play Store).</li>
+    </ol>
+    <p class="note">Déjà installée ? La nouvelle version s'installe par-dessus, tes scores sont gardés.</p>
+  </div>
+
+  <div class="card">
+    <h2>Sur iPhone</h2>
+    <p class="note" style="margin:0">Pas d'appli : ouvre le site dans Safari, touche <b>Partager</b> puis <b>Sur l'écran d'accueil</b>. Les boutons de volume ne fonctionnent pas sur iPhone.</p>
+  </div>
+
+  <a class="web" href="./">Ouvrir la version web →</a>
+</main>
+<script>
+// Numéro de la dernière version, lu dans version.json
+fetch('version.json', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(v){
+  document.getElementById('dl').href = v.apkUrl;
+  document.getElementById('dlInfo').textContent = 'Fichier APK · version ' + v.apk + ' · Android 8 ou plus récent';
+}).catch(function(){});
+</script>
+</body>
+</html>

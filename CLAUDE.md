@@ -34,6 +34,9 @@ Pour forcer la mise à jour du cache chez les utilisateurs après un changement 
 - **Bo5 / Bo3** : interrupteur (nombre de manches pour gagner : 3 ou 2).
 - **Nouveau set** (avec confirmation) : donne la manche à l'équipe qui mène, remet points, temps morts et avertissements à zéro, lance 90 s. En cas d'égalité, aucune manche n'est attribuée. Une ligne « MATCH » est journalisée quand une équipe atteint le nombre de manches requis.
 - **Avertissements** : 3 pastilles par équipe.
+- **Annuler** (bouton « ↶ Annuler » à gauche de Nouveau set, depuis V1.0.0) : `snap()` photographie `S` avant chaque action (point, correction, temps mort, avertissement, Bo, Points à 0, Nouveau set, Tout à zéro, Effacer), 30 niveaux, non sauvegardés. L'annulation garde le temps de jeu, les noms et les réglages actuels, et arrête le chrono lancé par l'action (`lieChrono()`).
+- **Fin de manche** : `gagnantManche()` — 5 points ; à la belle (manches à égalité, une de moins que nécessaire) 2 points d'écart, 8 maximum (règlement simplifié FFBF). Le bouton devient « Manche NOM » et pulse, toujours avec confirmation. Les scores des manches sont gardés dans `S.manches` ([[a, b], …]).
+- **Menu « Autres »** : chronos rares, puis « Partager le résumé du match » (`resume()` : manches, score, temps de jeu ; partage natif de l'APK 2 via `ArbitreApp.share`, sinon `navigator.share`, sinon presse-papiers), « Effacer l'historique », et la ligne « Version … · appli Android » (lien vers `app.html`).
 - **Historique** des événements (60 entrées max) avec bouton « Effacer ».
 - **Temps de jeu** en haut, qui démarre au premier chrono ou point ; toucher = pause / reprise.
 - **Noms d'équipes** modifiables (12 caractères).
@@ -70,6 +73,15 @@ Choix de Tristan (pas d'accessoire Bluetooth) : une vraie appli Android pour les
 - Paquet `com.tri5901.arbitrebaby`, minSdk 26, targetSdk 34 (34 et pas 35 pour éviter l'affichage bord à bord forcé d'Android 15).
 - Fabrication : `bash android/build.sh` (sans Gradle : aapt2, javac, d8, apksigner). JDK 17 Microsoft dans `C:\Program Files\Microsoft\jdk-17…`, SDK dans `%LOCALAPPDATA%\Android\Sdk`. Résultat : `android/out/arbitre-baby.apk`.
 - **Clé de signature hors dépôt** : `~/.android/arbitre-baby.jks` + mot de passe dans `~/.android/arbitre-baby.pass`. À sauvegarder : sans elle, une nouvelle version ne s'installe plus par-dessus l'ancienne. Monter `versionCode` dans `AndroidManifest.xml` à chaque nouvel APK.
+
+## Versions, hors-ligne et distribution (depuis le 22/10/2026)
+
+- **Version du site** : `VERSION` en haut du script de `index.html` (V1.0.0 au 22/10/2026), dernier chiffre +1 à chaque livraison ; garder `version.json` › `site` identique.
+- **Version de l'APK** : 3 endroits à monter ensemble : `android:versionCode` (AndroidManifest.xml), `VERSION_APK` (MainActivity.java), `apk` dans `version.json`. APK 2 = version, partage du résumé, téléchargements ouverts dans le navigateur. L'APK 1 (premier envoyé) n'a ni `version()` ni `share()` : la page le traite comme version 1.
+- **Mise à jour de l'APK** : la page compare `ArbitreApp.version()` à `version.json` et affiche « Nouvelle version de l'appli Android disponible. Télécharger » (dans `#msg`). L'APK est publié en **GitHub Release** du dépôt public (`gh release create apk-N android/out/arbitre-baby.apk`), lien fixe `https://github.com/Tri5901/arbitre-baby/releases/latest/download/arbitre-baby.apk` : c'est un autre domaine, donc même l'APK 1 l'ouvre dans le navigateur du téléphone (une URL du site resterait dans la WebView sans rien télécharger).
+- **Page de téléchargement** : `app.html` (https://arbitre-baby.vercel.app/app.html) : bouton de téléchargement, mode d'emploi d'installation, note iPhone. Lien à envoyer aux autres arbitres.
+- **Hors-ligne** : polices Barlow embarquées dans `fonts/` (woff2 latin, OFL) au lieu de Google Fonts, qui bloquait l'affichage sur réseau lent. `sw.js` : réseau d'abord, mais au-delà de 2,5 s sans réponse il sert la copie gardée ; `version.json` jamais mis en cache ; changer `CACHE` quand la liste `ASSETS` change. L'APK embarque aussi une copie de secours (index, manifest, polices) pour le tout premier lancement sans réseau.
+- **Piège de build Windows** : `aapt2 link -A` range les fichiers avec des « \ » dans l'APK (illisibles par Android) → build.sh ajoute la copie de secours avec `aapt add` depuis `out/pkg`. Pas de lambda Java (javac + android.jar ne trouve pas LambdaMetafactory) : classes anonymes.
 
 ## Historique des décisions
 

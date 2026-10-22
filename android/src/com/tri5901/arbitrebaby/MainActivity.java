@@ -15,6 +15,7 @@ import android.os.VibratorManager;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManager;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
@@ -35,6 +36,8 @@ public class MainActivity extends Activity {
     private static final String SITE = "https://arbitre-baby.vercel.app/";
     private static final String HOST = "arbitre-baby.vercel.app";
     private static final String FALLBACK = "file:///android_asset/index.html";
+    // À monter avec versionCode (AndroidManifest.xml) et "apk" dans version.json
+    private static final int VERSION_APK = 2;
 
     // Injecté à chaque chargement : remplace navigator.vibrate par la vibration de l'appli
     // et expose arbitreVolume() qui clique sur les boutons 10 / 15 de la page.
@@ -89,9 +92,17 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest req) {
                 Uri u = req.getUrl();
-                if (HOST.equals(u.getHost()) || "file".equals(u.getScheme())) return false;
+                // Un APK se télécharge dans le navigateur du téléphone, pas dans l'appli
+                boolean apk = u.getPath() != null && u.getPath().endsWith(".apk");
+                if (!apk && (HOST.equals(u.getHost()) || "file".equals(u.getScheme()))) return false;
                 try { startActivity(new Intent(Intent.ACTION_VIEW, u)); } catch (Exception e) {}
                 return true;
+            }
+        });
+        web.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String ua, String cd, String mime, long len) {
+                try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
             }
         });
         setContentView(web);
@@ -147,6 +158,21 @@ public class MainActivity extends Activity {
     }
 
     private class Bridge {
+        // Numéro de l'APK, comparé par la page à version.json pour proposer la mise à jour
+        @JavascriptInterface
+        public int version() {
+            return VERSION_APK;
+        }
+
+        // Partage d'un texte (résumé du match) vers WhatsApp, SMS, e-mail…
+        @JavascriptInterface
+        public void share(String text) {
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("text/plain");
+            i.putExtra(Intent.EXTRA_TEXT, text);
+            startActivity(Intent.createChooser(i, "Partager le résumé"));
+        }
+
         @JavascriptInterface
         public boolean vibrate(String json) {
             try {

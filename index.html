@@ -12,10 +12,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Arbitre Baby</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
 <style>
+/* Polices embarquées (dossier fonts/, licence OFL) : l'appli s'affiche tout de suite, même sans réseau */
+@font-face{font-family:Barlow;font-weight:500;font-display:swap;src:url(fonts/barlow-500.woff2) format('woff2')}
+@font-face{font-family:Barlow;font-weight:600;font-display:swap;src:url(fonts/barlow-600.woff2) format('woff2')}
+@font-face{font-family:Barlow;font-weight:700;font-display:swap;src:url(fonts/barlow-700.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:600;font-display:swap;src:url(fonts/barlow-condensed-600.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-700.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-weight:800;font-display:swap;src:url(fonts/barlow-condensed-800.woff2) format('woff2')}
 body{margin:0}
 /* Layout: pupitre noir qui tient sur un écran de téléphone sans défilement. Les hauteurs suivent la hauteur de l'écran (dvh). */
 :root{
@@ -150,7 +154,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 .foot button{flex:1 1 0;min-width:0;min-height:34px;font-size:12px;font-weight:600;padding:4px 4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:#c9ced5}
 .foot button[aria-pressed="true"]{background:rgba(43,200,102,.12);border-color:rgba(43,200,102,.35);color:#8be0ab}
 .foot button[aria-pressed="false"]{color:var(--muted)}
-.msg{margin:0;color:var(--muted);font-size:12px}
+.msg{margin:0;color:var(--muted);font-size:12px;white-space:pre-line}
+.msg a{color:var(--accent);font-weight:700}
+.clr:disabled{opacity:.35;cursor:default}
+#newSet{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 8px}
+#newSet.ready{box-shadow:0 0 0 3px rgba(255,210,63,.4);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{box-shadow:0 0 0 7px rgba(255,210,63,.12)}}
+@media (prefers-reduced-motion:reduce){#newSet.ready{animation:none}}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 8px}
+.menu .ver{display:block;padding:8px 12px 4px;font-size:12px;color:var(--muted);text-decoration:none}
 .msg:empty{display:none}
 
 @media (max-height:800px){
@@ -184,6 +196,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 <script>
 (function(){
   var $ = function(s){ return document.querySelector(s); };
+  // Version du site : dernier chiffre +1 à chaque livraison
+  var VERSION = 'V1.0.0';
   var KEY = 'arbitre-baby-v2';
   // Dans l'appli Android, le pont ArbitreApp existe : on affiche l'aide des boutons de volume.
   var inApp = !!window.ArbitreApp;
@@ -199,7 +213,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       if (o && o.n && o.pts && o.pts.length === 2 && o.gt) { S = o; }
     }
   } catch(e) {}
+  if (!S.manches) S.manches = [];
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} }
+
+  /* ---------- Annuler : une photo de l'état avant chaque action ---------- */
+  var pile = [];
+  function snap(){ pile.push({ s: JSON.stringify(S), t: null }); if (pile.length > 30) pile.shift(); }
+  // Retient le chrono lancé par l'action : l'annuler l'arrête aussi
+  function lieChrono(){ if (pile.length) pile[pile.length - 1].t = T; }
 
   /* ---------- Squelette ---------- */
   function sideHTML(i){
@@ -240,7 +261,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
         tileHTML(1) +
       '</section>'+
       '<section class="ctl">'+
-        '<button class="clr" id="clear">Effacer</button>'+
+        '<button class="clr" id="undo" disabled aria-label="Annuler la dernière action">↶ Annuler</button>'+
         '<button class="y" id="newSet">Nouveau set</button>'+
         '<button class="stp" id="stop">Stop</button>'+
       '</section>'+
@@ -256,6 +277,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
           '<button role="menuitem" data-t="180" data-name="Appel joueur absent" data-log="Appel joueur absent · 2e appel dans 3 min"><span>Appel joueur absent</span><b>3 min</b></button>'+
           '<button role="menuitem" data-t="300" data-name="Retard" data-log="Retard · 5 min (une manche perdue toutes les 5 min)"><span>Retard</span><b>5 min</b></button>'+
           '<button role="menuitem" data-t="180" data-name="Entre éléments" data-log="Pause entre éléments · 180 s"><span>Entre éléments</span><b>180 s</b></button>'+
+          '<hr>'+
+          '<button role="menuitem" id="share"><span>Partager le résumé du match</span></button>'+
+          '<button role="menuitem" id="clear"><span>Effacer l\'historique</span></button>'+
+          '<a class="ver" href="app.html">Version ' + VERSION + ' · appli Android</a>'+
         '</div>'+
       '</section>'+
       '<section class="foot">'+
@@ -269,6 +294,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     '</div>';
 
   function nm(i){ return S.n[i] || ('Team ' + (i + 1)); }
+  // Équipe qui a gagné la manche en cours, sinon -1 : 5 points ; à la belle, 2 points d'écart, 8 points maximum
+  // (règlement simplifié FFBF)
+  function gagnantManche(){
+    var a = S.pts[0], b = S.pts[1], hi = Math.max(a, b), need = S.bo === 5 ? 3 : 2;
+    var belle = S.sets[0] === need - 1 && S.sets[1] === need - 1;
+    if (a === b || hi < 5) return -1;
+    if (belle && Math.abs(a - b) < 2 && hi < 8) return -1;
+    return a > b ? 0 : 1;
+  }
   function setMsg(t){ $('#msg').textContent = t || ''; }
 
   /* ---------- Journal ---------- */
@@ -301,6 +335,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       }
       var dots = $('#dots'+i).children;
       for (var d = 0; d < 3; d++) dots[d].classList.toggle('on', d < S.warn[i]);
+    }
+    $('#undo').disabled = !pile.length;
+    // Manche gagnée : « Nouveau set » devient « Manche NOM » et s'allume (toujours avec confirmation)
+    var ns = $('#newSet');
+    if (!ns.classList.contains('armed')) {
+      var g = gagnantManche();
+      ns.textContent = g < 0 ? 'Nouveau set' : 'Manche ' + nm(g);
+      ns.classList.toggle('ready', g >= 0);
     }
     $('#bo').setAttribute('aria-pressed', S.bo === 5);
     $('#boTxt').textContent = 'Bo' + S.bo;
@@ -456,27 +498,31 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       if (d.log) addLog(d.log);
     } else if (d.pt !== undefined) {
       var i = +d.pt;
+      snap();
       S.pts[i] += 1; render();
       // Chaque but lance la pause entre les points, 5 s max (règles ITSF art. 7.1.1.1) ;
       // lancée avant le journal pour que le but reste en tête
-      startTimer(5, 'Après but');
+      startTimer(5, 'Après but'); lieChrono();
       addLog('But ' + nm(i) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
     } else if (d.mn !== undefined) {
       var j = +d.mn;
       if (S.pts[j] > 0) {
+        snap();
         S.pts[j] -= 1; render();
         addLog('Correction ' + nm(j) + ' : ' + S.pts[0] + ' - ' + S.pts[1]);
       }
     } else if (d.to) {
       var p = d.to.split(':'), t = +p[0], k = +p[1];
+      snap();
       if (S.to[t] >= k) { S.to[t] = k - 1; render(); save(); }
       else {
         S.to[t] = k; render();
         addLog('Temps mort ' + nm(t) + ' (' + k + '/2) · 30 s');
-        startTimer(30, 'Temps mort ' + nm(t));
+        startTimer(30, 'Temps mort ' + nm(t)); lieChrono();
       }
     } else if (d.warn !== undefined) {
       var w = +d.warn;
+      snap();
       S.warn[w] = (S.warn[w] + 1) % 4; render();
       if (S.warn[w] > 0) addLog('Avertissement ' + nm(w) + ' (' + S.warn[w] + ')');
       else save();
@@ -492,25 +538,61 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   document.addEventListener('click', function(e){
     if (!menu.hidden && !more.contains(e.target) && (menu.contains(e.target) ? e.target.closest('button') : true)) showMenu(false);
   });
-  $('#clear').addEventListener('click', function(){ S.log = []; renderLog(); save(); });
-  $('#bo').addEventListener('click', function(){ S.bo = S.bo === 5 ? 3 : 5; render(); save(); });
+  $('#clear').addEventListener('click', function(){ snap(); S.log = []; renderLog(); save(); render(); });
+  $('#bo').addEventListener('click', function(){ snap(); S.bo = S.bo === 5 ? 3 : 5; render(); save(); });
+
+  $('#undo').addEventListener('click', function(){
+    var e = pile.pop();
+    if (!e) return;
+    // On garde le temps de jeu, les noms et les réglages tels qu'ils sont maintenant
+    var cur = S;
+    S = JSON.parse(e.s);
+    S.gt = cur.gt; S.n = cur.n; S.vib = cur.vib; S.snd = cur.snd;
+    if (e.t && T === e.t) T = null;
+    render(); renderLog(); renderTimer(); save();
+  });
+
+  /* ---------- Résumé du match à partager ---------- */
+  function resume(){
+    var need = S.bo === 5 ? 3 : 2, l = [];
+    l.push('Arbitre Baby · ' + new Date().toLocaleDateString('fr-FR'));
+    l.push(nm(0) + ' ' + S.sets[0] + ' - ' + S.sets[1] + ' ' + nm(1) + ' (Bo' + S.bo + ')');
+    S.manches.forEach(function(m, k){ l.push('Manche ' + (k + 1) + ' : ' + m[0] + ' - ' + m[1]); });
+    if (S.pts[0] || S.pts[1]) l.push('Manche en cours : ' + S.pts[0] + ' - ' + S.pts[1]);
+    var w = S.sets[0] >= need ? 0 : S.sets[1] >= need ? 1 : -1;
+    if (w >= 0) l.push('Vainqueur : ' + nm(w));
+    l.push('Temps de jeu : ' + gtFmt(gtNow()));
+    return l.join('\n');
+  }
+  $('#share').addEventListener('click', function(){
+    var txt = resume();
+    try { if (window.ArbitreApp && typeof ArbitreApp.share === 'function') { ArbitreApp.share(txt); return; } } catch(e) {}
+    if (navigator.share) { navigator.share({ text: txt }).catch(function(){}); return; }
+    var copie = function(){ setMsg('Résumé copié : colle-le dans WhatsApp.'); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(copie, function(){ setMsg(txt); });
+    else setMsg(txt);
+  });
 
   function confirmable(btn, armedText, fn){
     var original = btn.textContent, armed = false, to = null;
-    function disarm(){ armed = false; btn.classList.remove('armed'); btn.textContent = original; clearTimeout(to); }
+    // render() remet ensuite le bon libellé (ex. « Manche Nantes » sur Nouveau set)
+    function disarm(){ armed = false; btn.classList.remove('armed'); btn.textContent = original; clearTimeout(to); render(); }
     btn.addEventListener('click', function(){
       if (!armed) { armed = true; btn.classList.add('armed'); btn.textContent = armedText; to = setTimeout(disarm, 3500); }
       else { disarm(); fn(); }
     });
   }
   confirmable($('#resetPts'), 'Confirmer ?', function(){
+    snap();
     S.pts = [0, 0]; render(); addLog('Points remis à 0');
   });
   confirmable($('#newSet'), 'Confirmer ?', function(){
     var a = S.pts[0], b = S.pts[1], need = S.bo === 5 ? 3 : 2, started = false;
+    snap();
     if (a !== b) {
       var w = a > b ? 0 : 1;
       S.sets[w] += 1;
+      S.manches.push([a, b]);
       addLog('Set ' + (S.sets[0] + S.sets[1]) + ' : ' + nm(w) + ' gagne ' + a + ' - ' + b);
       if (S.sets[w] >= need) addLog('MATCH : ' + nm(w) + ' gagne ' + S.sets[0] + ' - ' + S.sets[1]);
       else started = true;
@@ -519,10 +601,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     }
     S.pts = [0, 0]; S.to = [0, 0]; S.warn = [0, 0];
     render(); save();
-    if (started) startTimer(90, 'Fin de set');
+    if (started) { startTimer(90, 'Fin de set'); lieChrono(); }
   });
   confirmable($('#resetAll'), 'Confirmer ?', function(){
-    S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.log = [];
+    snap();
+    S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.log = []; S.manches = [];
     S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
     T = null; renderTimer(); render(); renderLog(); renderGT(); save();
   });
@@ -539,6 +622,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     else if (ok) setMsg('Chrome a envoyé la vibration au téléphone. Si rien ne bouge, vérifie dans Android : vibrations activées, mode silencieux et Ne pas déranger coupés.');
     else setMsg('Chrome a refusé la vibration (réponse : non).');
   });
+
+  /* ---------- Nouvelle version de l'appli Android ---------- */
+  // version.json donne le numéro du dernier APK ; l'APK 1 n'annonce pas sa version
+  if (inApp) {
+    var apkLocal = 1;
+    try { if (typeof ArbitreApp.version === 'function') apkLocal = +ArbitreApp.version(); } catch(e) {}
+    fetch('version.json', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(v){
+      if (v.apk > apkLocal) $('#msg').innerHTML = 'Nouvelle version de l\'appli Android disponible. <a href="' + v.apkUrl + '">Télécharger</a>';
+    }).catch(function(){});
+  }
 
   render(); renderLog(); renderTimer(); renderGT();
 })();
