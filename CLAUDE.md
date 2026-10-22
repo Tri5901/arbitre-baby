@@ -28,8 +28,8 @@ Pour forcer la mise à jour du cache chez les utilisateurs après un changement 
 
 - **Chrono** géant avec dixièmes de seconde (ex. `14.7`, `1:29.9`). Toucher le chrono = pause / reprise. Passe en jaune sous 3 s.
 - **Boutons de départ** : 10 s et 15 s (grands boutons verts), « Fin de set · 90 s », « Stop ».
-- **Temps morts** : cases 0 / 1 / 2 par équipe. Toucher 1 ou 2 compte le temps mort et lance un chrono de 30 s ; toucher une case déjà remplie l'annule.
-- **Score** : une grosse tuile par équipe (appui = +1 point), petit bouton « − » pour corriger, compteur de manches affiché dans la tuile, « Points à 0 ».
+- **Temps morts** : deux grandes cases « 1 » et « 2 » par équipe (la case « 0 » a été retirée le 22/10/2026), qui prennent la place libre de la carte. Toucher une case compte le temps mort et lance un chrono de 30 s ; toucher une case déjà prise l'annule. Case prise = couleur de l'équipe + coche.
+- **Score** : une grosse tuile par équipe (appui = +1 point **et chrono « Après but » de 6 s**, demandé le 22/10/2026), petit bouton « − » pour corriger (sans chrono), compteur de manches affiché dans la tuile, « Points à 0 ».
 - **Bo5 / Bo3** : interrupteur (nombre de manches pour gagner : 3 ou 2).
 - **Nouveau set** (avec confirmation) : donne la manche à l'équipe qui mène, remet points, temps morts et avertissements à zéro, lance 90 s. En cas d'égalité, aucune manche n'est attribuée. Une ligne « MATCH » est journalisée quand une équipe atteint le nombre de manches requis.
 - **Avertissements** : 3 pastilles par équipe.
