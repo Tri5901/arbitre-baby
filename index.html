@@ -129,6 +129,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 .stp{background:var(--stop-bg);color:var(--stop);border:1px solid rgba(255,93,93,.35)}
 .armed,#newSet.armed{background:#fff!important;color:#111!important;border-color:#fff!important}
 .go{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.go.solo{grid-template-columns:1fr}
+.go.solo #goB{display:none}
 .go button{position:relative;height:clamp(60px,10.5dvh,104px);background:linear-gradient(180deg,var(--go-a),var(--go-b));color:var(--on-go);
   font-family:var(--num);font-weight:800;font-size:clamp(44px,7.5dvh,70px);line-height:1;border-radius:20px;font-variant-numeric:tabular-nums;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 18px rgba(23,165,77,.25)}
@@ -214,7 +216,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 (function(){
   var $ = function(s){ return document.querySelector(s); };
   // Version du site : dernier chiffre +1 à chaque livraison
-  var VERSION = 'V1.0.1';
+  var VERSION = 'V1.0.2';
   var KEY = 'arbitre-baby-v2';
   // Dans l'appli Android, le pont ArbitreApp existe : on affiche l'aide des boutons de volume.
   var inApp = !!window.ArbitreApp;
@@ -283,8 +285,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
         '<button class="stp" id="stop">Stop</button>'+
       '</section>'+
       '<section class="go">'+
-        '<button data-t="10" aria-label="Chrono 10 secondes">10<small>s</small><em class="hint">Vol +</em></button>'+
-        '<button data-t="15" aria-label="Chrono 15 secondes">15<small>s</small><em class="hint">Vol −</em></button>'+
+        '<button data-t="10" id="goA" aria-label="Chrono 10 secondes"><span class="gval">10</span><small>s</small><em class="hint">Vol +</em></button>'+
+        '<button data-t="15" id="goB" aria-label="Chrono 15 secondes"><span class="gval">15</span><small>s</small><em class="hint">Vol −</em></button>'+
       '</section>'+
       '<section class="extra">'+
         '<button class="x3" data-t="3" aria-label="Chrono 3 secondes">3 s</button>'+
@@ -295,6 +297,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
           '<button role="menuitem" data-t="300" data-name="Retard" data-log="Retard · 5 min (une manche perdue toutes les 5 min)"><span>Retard</span><b>5 min</b></button>'+
           '<button role="menuitem" data-t="180" data-name="Entre éléments" data-log="Pause entre éléments · 180 s"><span>Entre éléments</span><b>180 s</b></button>'+
           '<hr>'+
+          '<button role="menuitem" id="regle12"><span>12 s partout (règle 2027)</span><b id="regle12v">non</b></button>'+
           '<button role="menuitem" id="coralBtn"><span>Match Coral (tournoi + table)</span></button>'+
           '<button role="menuitem" id="share"><span>Partager le résumé du match</span></button>'+
           '<button role="menuitem" id="clear"><span>Effacer l\'historique</span></button>'+
@@ -383,6 +386,15 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     $('#boTxt').textContent = 'Bo' + S.bo;
     $('#vib').setAttribute('aria-pressed', S.vib);
     $('#vib').textContent = S.vib ? 'Vibreur : oui' : 'Vibreur : non';
+    // « 12 s partout » (possession 12 s sur toutes les barres à partir de janvier 2027) : un seul gros bouton 12 s.
+    // Le 2e bouton reste dans la page (caché) : l'appli Android clique sur [data-t="10"] / [data-t="15"] pour volume + / −.
+    var a12 = $('#goA'), b12 = $('#goB');
+    a12.dataset.sec = b12.dataset.sec = S.p12 ? '12' : '';
+    a12.querySelector('.gval').textContent = S.p12 ? '12' : '10';
+    a12.querySelector('.hint').textContent = S.p12 ? 'Vol + / −' : 'Vol +';
+    a12.setAttribute('aria-label', 'Chrono ' + (S.p12 ? 12 : 10) + ' secondes');
+    $('.go').classList.toggle('solo', !!S.p12);
+    $('#regle12v').textContent = S.p12 ? 'oui' : 'non';
     $('#snd').setAttribute('aria-pressed', S.snd);
     $('#snd').textContent = S.snd ? 'Son : oui' : 'Son : non';
   }
@@ -395,6 +407,11 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   }
 
   /* ---------- Vibreur, son, écran ---------- */
+  // Retour haptique très court à l'appui (suit le réglage Vibreur)
+  function tic(){
+    if (!S.vib) return;
+    try { if (navigator.vibrate) navigator.vibrate(18); } catch(e) {}
+  }
   function buzz(p){
     if (!S.vib) return null;
     var ok = false;
@@ -528,8 +545,12 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     var b = e.target.closest('button');
     if (!b) return;
     var d = b.dataset;
+    // Petit retour haptique sur les boutons de jeu (aussi quand le chrono part par un bouton de volume)
+    if (d.t || b.closest('.tile, .seg, .warn-b')) tic();
     if (d.t) {
-      startTimer(+d.t, d.name || 'Chrono ' + d.t + ' s');
+      // data-sec remplace la durée affichée par défaut (réglage « 12 s partout »)
+      var sec = +(d.sec || d.t);
+      startTimer(sec, d.name || 'Chrono ' + sec + ' s');
       if (d.log) addLog(d.log);
     } else if (d.pt !== undefined) {
       var i = +d.pt;
@@ -575,6 +596,10 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   });
   $('#clear').addEventListener('click', function(){ snap(); S.log = []; renderLog(); save(); render(); });
   $('#bo').addEventListener('click', function(){ snap(); S.bo = S.bo === 5 ? 3 : 5; render(); save(); });
+  $('#regle12').addEventListener('click', function(){
+    S.p12 = !S.p12; render(); save();
+    setMsg(S.p12 ? 'Possession 12 s partout : volume + et volume − lancent 12 s.' : 'Possession 10 s / 15 s.');
+  });
 
   $('#undo').addEventListener('click', function(){
     var e = pile.pop();
