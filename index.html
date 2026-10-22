@@ -12,24 +12,30 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Arbitre Baby</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap">
 <style>
 body{margin:0}
 /* Layout: pupitre noir qui tient sur un écran de téléphone sans défilement. Les hauteurs suivent la hauteur de l'écran (dvh). */
 :root{
   color-scheme:dark;
-  --bg:#000000; --fg:#ffffff; --muted:#a3a8ad; --line:#2c2f33; --panel:#14161a;
-  --t0:#e8710a; --on-t0:#ffffff; --t0-dim:#8a4306;
-  --t1:#a8a8a8; --on-t1:#111111; --t1-dim:#5e5e5e;
-  --yellow:#efd36f; --on-yellow:#1a1500;
-  --stop:#f77f7f; --on-stop:#2a0505;
-  --go:#2bc866; --on-go:#04210f;
-  --card:#ffd23f; --on-card:#1a1500;
-  --font:Roboto,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --bg:#000000; --fg:#f5f6f8; --muted:#8b929b; --line:rgba(255,255,255,.07);
+  --surface:#111317; --surface-2:#1a1d22; --surface-3:#23272d;
+  --t0:#ff7a1a; --t0-a:#ff9142; --t0-b:#e5600a; --on-t0:#ffffff;
+  --t1:#c4cad2; --t1-a:#dde1e6; --t1-b:#9ba3ad; --on-t1:#14171b;
+  --accent:#ffd23f; --on-accent:#1f1800;
+  --stop:#ff5d5d; --stop-bg:rgba(255,93,93,.14);
+  --go-a:#3ddc7e; --go-b:#17a54d; --on-go:#032712; --go:#2bc866;
+  --font:Barlow,system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+  --num:'Barlow Condensed',Barlow,system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html{background:var(--bg)}
-body{background:var(--bg);color:var(--fg);font:15px/1.25 var(--font)}
+body{
+  background:radial-gradient(120% 45% at 50% -8%,rgba(255,122,26,.13),transparent 70%),var(--bg);
+  background-attachment:fixed;color:var(--fg);font:500 15px/1.25 var(--font)
+}
 .app{
   max-width:560px;margin:0 auto;min-height:100vh;min-height:100dvh;
   display:grid;grid-template-rows:auto auto minmax(190px,1fr) auto auto auto auto auto auto;gap:8px;
@@ -39,85 +45,110 @@ body{background:var(--bg);color:var(--fg);font:15px/1.25 var(--font)}
   padding-right:max(12px,env(safe-area-inset-right,0px));
 }
 button,input{font:inherit;color:inherit}
-button{border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:10px;background:var(--panel)}
-button:active{transform:scale(.97)}
+button{border:0;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border-radius:14px;background:var(--surface-2);transition:transform .08s,filter .15s}
+button:active{transform:scale(.96);filter:brightness(1.12)}
 button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-offset:2px}
 
 /* Temps de jeu et chrono */
-.gt{display:block;margin:0 auto;background:none;border-radius:8px;padding:2px 10px;font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.gt{display:flex;align-items:center;gap:8px;margin:0 auto;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px 14px 4px 12px;font-size:15px;font-weight:600;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.gt::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--go);box-shadow:0 0 0 3px rgba(43,200,102,.18)}
 .gt.off{color:var(--muted)}
-.stage{text-align:center;border-radius:12px;padding:0 0 2px;cursor:pointer;touch-action:manipulation}
-.big{font-weight:700;font-size:clamp(60px,min(15dvh,30vw),140px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
-.big.long{font-size:clamp(44px,min(10dvh,18vw),96px)}
-.sub{min-height:1.3em;font-size:13px;color:var(--muted);overflow-wrap:anywhere}
-.stage.warn .big{color:var(--card)}
-.stage.paused .big{opacity:.45}
-.stage.done{background:var(--card);color:var(--on-card);animation:blink .5s steps(1) 6}
-.stage.done .sub{color:inherit}
-@keyframes blink{50%{background:var(--bg);color:var(--fg)}}
+.gt.off::before{background:var(--muted);box-shadow:none}
+.stage{position:relative;overflow:hidden;text-align:center;border-radius:22px;padding:6px 10px 14px;cursor:pointer;touch-action:manipulation;
+  background:linear-gradient(180deg,var(--surface-2),var(--surface));border:1px solid var(--line)}
+.big{font-family:var(--num);font-weight:800;font-size:clamp(64px,min(15dvh,32vw),150px);line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.big.long{font-size:clamp(48px,min(11dvh,22vw),104px)}
+.sub{min-height:1.3em;font-size:12.5px;color:var(--muted);overflow-wrap:anywhere;letter-spacing:.02em}
+.bar{position:absolute;left:14px;right:14px;bottom:7px;height:4px;border-radius:2px;background:rgba(255,255,255,.07);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--go);border-radius:inherit;transform-origin:left;transform:scaleX(0)}
+.stage.idle .big{color:var(--surface-3)}
+.stage.warn .big{color:var(--accent)}
+.stage.warn .bar i{background:var(--accent)}
+.stage.paused .big{opacity:.4}
+.stage.paused .bar i{background:var(--muted)}
+.stage.done{background:var(--accent);color:var(--on-accent);border-color:var(--accent);animation:blink .5s steps(1) 6}
+.stage.done .sub{color:inherit;font-weight:700}
+.stage.done .bar{opacity:0}
+@keyframes blink{50%{background:var(--surface);color:var(--fg)}}
 @media (prefers-reduced-motion:reduce){.stage.done{animation:none}}
 
 /* Équipes et historique */
-.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,1fr);gap:8px;min-height:0}
-.side{--tc:var(--t0);--on:var(--on-t0);--dim:var(--t0-dim);display:flex;flex-direction:column;gap:6px;min-width:0}
-.side.s1,.tile.s1{--tc:var(--t1);--on:var(--on-t1);--dim:var(--t1-dim)}
-.nm{width:100%;min-width:0;height:40px;border:0;border-radius:10px;background:var(--tc);color:var(--on);font-weight:700;font-size:18px;text-align:center;padding:0 4px}
-.lab{font-size:15px;text-align:center;line-height:1.1}
-.seg{display:grid;grid-template-columns:repeat(3,1fr);border:2px solid var(--tc);border-radius:9px;overflow:hidden}
-.seg button{height:38px;border-radius:0;background:#1b1b1b;font-weight:500;font-size:16px;border-right:1px solid var(--line)}
-.seg button:last-child{border-right:0}
-.seg button.on{background:var(--tc);color:var(--on)}
-.warn-b{height:40px;background:var(--tc);color:var(--on);font-weight:700;font-size:15px;border-radius:9px;padding:0 4px}
-.dots{display:flex;justify-content:space-around;align-items:center;height:18px}
-.dots i{width:16px;height:16px;border-radius:50%;background:#6a6a6a}
-.dots i.on{background:var(--tc)}
-.s1 .dots i.on{background:#fff}
+.mid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1fr);gap:8px;min-height:0}
+.side{--tc:var(--t0);--ta:var(--t0-a);--tb:var(--t0-b);--on:var(--on-t0);display:flex;flex-direction:column;gap:6px;min-width:0;
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:8px 7px}
+.side.s1,.tile.s1{--tc:var(--t1);--ta:var(--t1-a);--tb:var(--t1-b);--on:var(--on-t1)}
+.nm{width:100%;min-width:0;height:38px;border:0;border-radius:11px;background:linear-gradient(180deg,var(--ta),var(--tb));color:var(--on);
+  font-family:var(--num);font-weight:700;font-size:21px;letter-spacing:.03em;text-align:center;padding:0 4px;text-transform:uppercase}
+.lab{font-size:10.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;text-align:center;line-height:1.1;color:var(--muted);margin-top:2px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;background:var(--bg);border-radius:12px}
+.seg button{height:34px;border-radius:9px;background:transparent;font-family:var(--num);font-weight:700;font-size:19px;color:var(--muted)}
+.seg button.on{background:linear-gradient(180deg,var(--ta),var(--tb));color:var(--on)}
+.warn-b{height:36px;background:transparent;border:1.5px solid var(--tc);color:var(--tc);font-weight:700;font-size:14px;border-radius:11px;padding:0 4px}
+.dots{display:flex;justify-content:center;gap:10px;align-items:center;height:16px}
+.dots i{width:13px;height:18px;border-radius:3px;background:var(--surface-3)}
+.dots i.on{background:var(--accent);box-shadow:0 0 8px rgba(255,210,63,.45)}
 .logwrap{position:relative;min-height:0}
-.log{position:absolute;inset:0;margin:0;padding:0;list-style:none;overflow-y:auto;background:var(--panel);border-radius:9px}
-.log li{padding:8px;font-size:13px;line-height:1.2;border-bottom:1px solid var(--line);color:#e4e6e8;overflow-wrap:anywhere}
-.log li:first-child{color:#fff;font-weight:500}
-.log .empty{color:var(--muted);border:0}
+.log{position:absolute;inset:0;margin:0;padding:4px 0;list-style:none;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px}
+.log li{padding:7px 10px;font-size:12.5px;line-height:1.25;border-bottom:1px solid var(--line);color:#c9ced5;overflow-wrap:anywhere}
+.log li:last-child{border-bottom:0}
+.log li:first-child{color:#fff;font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+.log .empty{color:var(--muted);border:0;text-align:center;padding-top:14px;font-weight:500}
+.log li.empty:first-child{color:var(--muted);font-weight:500;box-shadow:none}
 
 /* Score */
 .score{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.8fr) minmax(0,1.15fr);gap:8px}
-.tile{--tc:var(--t0);--on:var(--on-t0);position:relative;height:clamp(84px,17dvh,160px);border-radius:10px;background:var(--tc);color:var(--on)}
-.tile .pt{position:absolute;inset:0;width:100%;height:100%;background:none;color:inherit;border-radius:10px;font-weight:700;font-size:clamp(48px,min(12dvh,21vw),110px);line-height:1;font-variant-numeric:tabular-nums;padding-top:8px}
-.tile .mn{position:absolute;left:5px;bottom:5px;width:36px;height:36px;border-radius:9px;background:rgba(0,0,0,.28);color:inherit;font-size:22px;line-height:1;font-weight:500}
-.tile .sets{position:absolute;left:0;right:0;top:5px;text-align:center;font-size:11px;font-weight:500;letter-spacing:.04em;pointer-events:none;opacity:.9}
+.tile{--tc:var(--t0);--ta:var(--t0-a);--tb:var(--t0-b);--on:var(--on-t0);position:relative;height:clamp(84px,17dvh,164px);border-radius:20px;
+  background:linear-gradient(160deg,var(--ta),var(--tb));color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 6px 18px rgba(0,0,0,.35)}
+.tile .pt{position:absolute;inset:0;width:100%;height:100%;background:none;color:inherit;border-radius:20px;font-family:var(--num);font-weight:800;font-size:clamp(56px,min(13dvh,24vw),124px);line-height:1;font-variant-numeric:tabular-nums;padding-top:12px}
+.tile .mn{position:absolute;left:6px;bottom:6px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.22);color:inherit;font-size:22px;line-height:1;font-weight:600}
+.tile .sets{position:absolute;left:0;right:0;top:8px;display:flex;justify-content:center;align-items:center;gap:5px;font-size:10px;font-weight:700;letter-spacing:.12em;pointer-events:none}
+.tile .sets b{opacity:.75;margin-right:2px}
+.tile .sets i{width:9px;height:9px;border-radius:50%;border:1.5px solid currentColor;opacity:.55}
+.tile .sets i.on{background:currentColor;opacity:1}
 .centerbtns{display:flex;flex-direction:column;gap:8px}
-.y{background:var(--yellow);color:var(--on-yellow);font-weight:500}
-.centerbtns .y{flex:1;font-size:17px;line-height:1.1;padding:4px 6px}
-.centerbtns .bo{flex:0 0 auto;height:46px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 8px;font-weight:700;font-size:17px}
-.knob{width:40px;height:22px;border-radius:11px;background:rgba(0,0,0,.35);position:relative;flex:0 0 auto}
-.knob::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--on-yellow);transition:transform .15s}
-.bo[aria-pressed="true"] .knob::after{transform:translateX(18px)}
+.y{background:var(--surface-2);color:var(--accent);font-weight:700;border:1px solid rgba(255,210,63,.28)}
+.centerbtns .y{flex:1;font-size:16px;line-height:1.1;padding:4px 6px}
+.centerbtns .bo{flex:0 0 auto;height:44px;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:0 10px;font-family:var(--num);font-weight:700;font-size:20px;color:var(--fg);border-color:var(--line)}
+.knob{width:38px;height:22px;border-radius:11px;background:var(--surface-3);position:relative;flex:0 0 auto;transition:background .15s}
+.knob::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .15s}
+.bo[aria-pressed="true"] .knob{background:var(--accent)}
+.bo[aria-pressed="true"] .knob::after{transform:translateX(16px);background:var(--on-accent)}
 
 /* Commandes */
 .ctl{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}
-.ctl button{height:50px;font-size:19px;font-weight:500}
-.clr{background:#fff;color:#111}
-.stp{background:var(--stop);color:var(--on-stop)}
-.armed{background:var(--card)!important;color:var(--on-card)!important}
+.ctl button{height:48px;font-size:17px;font-weight:700}
+.clr{background:var(--surface-2);color:#d7dbe0;border:1px solid var(--line)}
+#newSet{background:linear-gradient(180deg,#ffdc5e,#f5c21b);color:var(--on-accent);border:0}
+.stp{background:var(--stop-bg);color:var(--stop);border:1px solid rgba(255,93,93,.35)}
+.armed,#newSet.armed{background:#fff!important;color:#111!important;border-color:#fff!important}
 .go{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.go button{height:clamp(58px,10dvh,100px);background:var(--go);color:var(--on-go);font-weight:500;font-size:clamp(40px,7dvh,64px);line-height:1;border-radius:12px;font-variant-numeric:tabular-nums}
-.end90{width:100%;height:42px;font-size:16px;font-weight:500;background:var(--panel);border:2px solid var(--go);color:var(--fg)}
+.go button{position:relative;height:clamp(60px,10.5dvh,104px);background:linear-gradient(180deg,var(--go-a),var(--go-b));color:var(--on-go);
+  font-family:var(--num);font-weight:800;font-size:clamp(44px,7.5dvh,70px);line-height:1;border-radius:20px;font-variant-numeric:tabular-nums;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 6px 18px rgba(23,165,77,.25)}
+.go button small{font-size:.42em;font-weight:700;margin-left:2px;opacity:.75}
+.go .hint{display:none;position:absolute;right:10px;top:8px;font:700 10px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;font-style:normal;opacity:.65}
+.in-app .go .hint{display:block}
+.end90{width:100%;height:42px;font-size:15px;font-weight:700;letter-spacing:.02em;background:var(--surface);border:1.5px solid rgba(43,200,102,.55);color:#9ff0bf;border-radius:14px}
 
 /* Pied */
 .foot{display:flex;gap:6px}
-.foot button{flex:1 1 0;min-width:0;min-height:36px;font-size:12px;font-weight:500;padding:4px 4px}
-.foot button[aria-pressed="true"]{background:#1f3a2a;color:#8be0ab}
-.foot button[aria-pressed="false"]{background:var(--panel);color:var(--muted)}
+.foot button{flex:1 1 0;min-width:0;min-height:34px;font-size:12px;font-weight:600;padding:4px 4px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:#c9ced5}
+.foot button[aria-pressed="true"]{background:rgba(43,200,102,.12);border-color:rgba(43,200,102,.35);color:#8be0ab}
+.foot button[aria-pressed="false"]{color:var(--muted)}
 .msg{margin:0;color:var(--muted);font-size:12px}
 .msg:empty{display:none}
 
 @media (max-height:740px){
-  .nm,.warn-b{height:34px}
-  .seg button{height:32px}
+  .side{padding:6px;gap:5px}
+  .nm{height:32px;font-size:19px}
+  .warn-b{height:32px}
+  .seg button{height:28px}
   .tile{height:80px}
-  .ctl button{height:44px}
-  .go button{height:54px}
+  .tile .pt{font-size:58px;padding-top:14px}
+  .ctl button{height:42px}
+  .go button{height:54px;font-size:44px}
   .end90{height:36px}
-  .foot button{min-height:32px}
+  .foot button{min-height:30px}
 }
 </style>
 </head>
@@ -127,6 +158,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 (function(){
   var $ = function(s){ return document.querySelector(s); };
   var KEY = 'arbitre-baby-v2';
+  // Dans l'appli Android, le pont ArbitreApp existe : on affiche l'aide des boutons de volume.
+  var inApp = !!window.ArbitreApp;
+  if (inApp) document.documentElement.classList.add('in-app');
   var S = {
     n:['Team 1','Team 2'], pts:[0,0], sets:[0,0], to:[0,0], warn:[0,0],
     bo:5, vib:true, snd:true, log:[], gt:{ms:0, run:false, t0:0}
@@ -165,6 +199,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
       '<section class="stage" id="stage" aria-label="Chrono">'+
         '<div class="big" id="big">--</div>'+
         '<div class="sub" id="sub">Choisis un chrono</div>'+
+        '<div class="bar"><i id="bar"></i></div>'+
       '</section>'+
       '<section class="mid">'+ sideHTML(0) +
         '<div class="logwrap"><ol class="log" id="log" aria-label="Historique"></ol></div>'+
@@ -183,8 +218,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
         '<button class="stp" id="stop">Stop</button>'+
       '</section>'+
       '<section class="go">'+
-        '<button data-t="10" aria-label="Chrono 10 secondes">10</button>'+
-        '<button data-t="15" aria-label="Chrono 15 secondes">15</button>'+
+        '<button data-t="10" aria-label="Chrono 10 secondes">10<small>s</small><em class="hint">Vol +</em></button>'+
+        '<button data-t="15" aria-label="Chrono 15 secondes">15<small>s</small><em class="hint">Vol −</em></button>'+
       '</section>'+
       '<button class="end90" id="end90">Fin de set · 90 s</button>'+
       '<section class="foot">'+
@@ -215,9 +250,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 
   /* ---------- Affichage des compteurs ---------- */
   function render(){
+    var need = S.bo === 5 ? 3 : 2;
     for (var i = 0; i < 2; i++) {
       $('#pt'+i).textContent = S.pts[i];
-      $('#sets'+i).textContent = 'MANCHES ' + S.sets[i];
+      // Manches : une pastille par manche à gagner, pleine quand elle est gagnée
+      var pips = '<b>MANCHES</b>';
+      for (var m = 0; m < Math.max(need, S.sets[i]); m++) pips += '<i' + (m < S.sets[i] ? ' class="on"' : '') + '></i>';
+      $('#sets'+i).innerHTML = pips;
+      $('#sets'+i).setAttribute('aria-label', 'Manches gagnées : ' + S.sets[i]);
       var segs = document.querySelectorAll('[data-to^="'+i+':"]');
       for (var k = 0; k < segs.length; k++) {
         segs[k].classList.toggle('on', k === 0 ? S.to[i] === 0 : S.to[i] >= k);
@@ -306,7 +346,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   });
 
   /* ---------- Chrono ---------- */
-  var stage = $('#stage'), big = $('#big'), sub = $('#sub');
+  var stage = $('#stage'), big = $('#big'), sub = $('#sub'), bar = $('#bar');
   var T = null;
   function fmt(ms){
     var t = Math.ceil(ms / 100), s = Math.floor(t / 10), d = t % 10;
@@ -316,14 +356,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   function curRem(){ return T.paused ? T.rem : Math.max(0, T.end - Date.now()); }
   function renderTimer(){
     if (!T) {
-      stage.className = 'stage'; big.className = 'big';
+      stage.className = 'stage idle'; big.className = 'big';
       big.textContent = '--'; sub.textContent = 'Choisis un chrono';
+      bar.style.transform = 'scaleX(0)';
       return;
     }
     var rem = T.done ? 0 : curRem();
     var txt = fmt(rem);
     big.textContent = txt;
     big.className = 'big' + (txt.length > 5 ? ' long' : '');
+    bar.style.transform = 'scaleX(' + (rem / T.total).toFixed(4) + ')';
     var cls = 'stage';
     if (T.done) cls += ' done';
     else if (T.paused) cls += ' paused';
@@ -443,6 +485,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     unlock(); beep();
     var ok = buzz([300, 100, 300]);
     if (ok === null) setMsg('Le vibreur est coupé. Réactive-le avec le bouton « Vibreur ».');
+    else if (inApp) setMsg(ok ? 'Vibration envoyée en mode alarme. Si rien ne bouge, vérifie que les vibrations sont activées dans Android.' : 'L\'appli n\'a pas pu faire vibrer le téléphone.');
     else if (!('vibrate' in navigator)) setMsg('Ce navigateur ne gère pas la vibration.');
     else if (ok) setMsg('Chrome a envoyé la vibration au téléphone. Si rien ne bouge, vérifie dans Android : vibrations activées, mode silencieux et Ne pas déranger coupés.');
     else setMsg('Chrome a refusé la vibration (réponse : non).');

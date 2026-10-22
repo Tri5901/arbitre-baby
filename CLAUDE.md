@@ -40,7 +40,7 @@ Pour forcer la mise à jour du cache chez les utilisateurs après un changement 
 - Réglages en bas : Vibreur oui/non, Son oui/non, Tester, Tout à zéro (avec confirmation).
 - État sauvegardé dans `localStorage` sous la clé `arbitre-baby-v2`. Wake Lock demandé pendant un chrono.
 - Mise en page : une seule colonne, `max-width: 560px`, tient sur un écran de téléphone **sans défilement** (tailles en `dvh`, test fait à 390×800 et 390×690 : zéro débordement).
-- Design : thème noir, orange (équipe 1) et gris (équipe 2), vert pour 10/15, jaune pour les actions. Police Roboto (Google Fonts). Modelé sur une appli d'arbitrage que Tristan utilisait (capture fournie).
+- Design (refait le 22/10/2026, « tableau de score ») : même disposition qu'avant, en cartes arrondies sur fond noir avec léger halo orange en haut. Polices Barlow (textes) et Barlow Condensed (chiffres), via Google Fonts. Orange (équipe 1) et argent (équipe 2) en dégradés, vert pour 10/15, jaune pour « Nouveau set », les avertissements (pastilles façon carton) et la confirmation. Barre de progression sous le chrono (`#bar`), manches en pastilles dans les tuiles de score (autant que de manches à gagner). Dans l'appli Android (`window.ArbitreApp` présent → classe `in-app` sur `<html>`), les boutons 10/15 affichent « Vol + / Vol − ». À l'origine, modelé sur une appli d'arbitrage que Tristan utilisait (capture fournie).
 
 Logo : baby-foot vu de dessus (terrain vert, barres, joueurs orange en haut et gris en bas, balle blanche). Les PNG ont été dessinés au canvas ; la fonction de dessin n'est pas dans le dépôt (voir plus bas).
 
