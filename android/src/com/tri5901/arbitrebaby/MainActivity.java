@@ -8,6 +8,8 @@ import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationAttributes;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
@@ -17,6 +19,8 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
+import android.webkit.ValueCallback;
+import android.widget.FrameLayout;
 import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
@@ -24,20 +28,29 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 /*
  * Arbitre Baby en appli Android : affiche le site en ligne dans une WebView et ajoute
  * ce que Chrome ne permet pas :
  *  - volume + lance le chrono 10 s, volume - lance le chrono 15 s ;
  *  - vibration faite par l'appli en mode « alarme » (passe outre le mode silencieux) ;
- *  - écran toujours allumé tant que l'appli est ouverte.
+ *  - écran toujours allumé tant que l'appli est ouverte ;
+ *  - match Coral : la page publique du tournoi est ouverte en arrière-plan (comme par un
+ *    spectateur) et coral.js y lit le match de la table demandée.
  */
 public class MainActivity extends Activity {
     private static final String SITE = "https://arbitre-baby.vercel.app/";
     private static final String HOST = "arbitre-baby.vercel.app";
     private static final String FALLBACK = "file:///android_asset/index.html";
     // À monter avec versionCode (AndroidManifest.xml) et "apk" dans version.json
-    private static final int VERSION_APK = 2;
+    private static final int VERSION_APK = 3;
+    private static final String CORAL = "https://app.tablesoccer.org/p/";
+    // Nombre d'essais (un par seconde) avant de déclarer le tournoi introuvable
+    private static final int CORAL_ESSAIS = 30;
 
     // Injecté à chaque chargement : remplace navigator.vibrate par la vibration de l'appli
     // et expose arbitreVolume() qui clique sur les boutons 10 / 15 de la page.
@@ -52,6 +65,12 @@ public class MainActivity extends Activity {
     private WebView web;
     private Vibrator vibrator;
     private boolean onFallback = false;
+
+    private FrameLayout racine;
+    private WebView coral;          // page publique Coral, cachée sous la page de l'appli
+    private String coralCode;       // tournoi actuellement chargé dans coral
+    private int coralDemande = 0;   // numéro de la dernière demande : une nouvelle demande annule l'ancienne
+    private final Handler ui = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle state) {
@@ -105,7 +124,10 @@ public class MainActivity extends Activity {
                 try { startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (Exception e) {}
             }
         });
-        setContentView(web);
+        racine = new FrameLayout(this);
+        racine.setBackgroundColor(Color.BLACK);
+        racine.addView(web);
+        setContentView(racine);
 
         if (state == null || web.restoreState(state) == null) web.loadUrl(SITE);
     }
@@ -157,7 +179,71 @@ public class MainActivity extends Activity {
         }
     }
 
+    /* ---------- Match Coral (tournoi + table) ---------- */
+
+    private void chargerCoral(String code, final String table) {
+        if (coral == null) {
+            coral = new WebView(this);
+            coral.getSettings().setJavaScriptEnabled(true);
+            coral.getSettings().setDomStorageEnabled(true);
+            coral.setWebViewClient(new WebViewClient());
+            // Posée sous la page de l'appli : invisible, mais affichée pour que Coral se charge normalement
+            racine.addView(coral, 0, new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        }
+        // Même tournoi : la page reste ouverte et à jour (Coral la rafraîchit en direct), on relit seulement
+        if (!code.equals(coralCode)) {
+            coralCode = code;
+            coral.loadUrl(CORAL + code);
+        }
+        final String script = lireAsset("coral.js")
+            .replace("__CODE__", JSONObject.quote(code)).replace("__TABLE__", JSONObject.quote(table));
+        extraire(script, ++coralDemande, 0);
+    }
+
+    private void extraire(final String script, final int demande, final int essai) {
+        if (demande != coralDemande) return;
+        coral.evaluateJavascript(script, new ValueCallback<String>() {
+            @Override
+            public void onReceiveValue(String r) {
+                if (demande != coralDemande) return;
+                boolean pret = r != null && !r.equals("null");
+                if (!pret && essai + 1 < CORAL_ESSAIS) {
+                    ui.postDelayed(new Runnable() {
+                        @Override
+                        public void run() { extraire(script, demande, essai + 1); }
+                    }, 1000);
+                    return;
+                }
+                web.evaluateJavascript("window.arbitreCoral&&arbitreCoral(" + (pret ? r : "{\"err\":\"tournoi\"}") + ")", null);
+            }
+        });
+    }
+
+    private String lireAsset(String nom) {
+        try {
+            InputStream in = getAssets().open(nom);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] b = new byte[4096];
+            int n;
+            while ((n = in.read(b)) > 0) out.write(b, 0, n);
+            in.close();
+            return out.toString("UTF-8");
+        } catch (Exception e) {
+            return "null";
+        }
+    }
+
     private class Bridge {
+        // Demande le match en cours sur une table d'un tournoi Coral ; réponse dans window.arbitreCoral(...)
+        @JavascriptInterface
+        public void coral(final String code, final String table) {
+            ui.post(new Runnable() {
+                @Override
+                public void run() { chargerCoral(code.trim().toUpperCase(), table.trim()); }
+            });
+        }
+
         // Numéro de l'APK, comparé par la page à version.json pour proposer la mise à jour
         @JavascriptInterface
         public int version() {

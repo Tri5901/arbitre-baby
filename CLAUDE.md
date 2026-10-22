@@ -74,6 +74,15 @@ Choix de Tristan (pas d'accessoire Bluetooth) : une vraie appli Android pour les
 - Fabrication : `bash android/build.sh` (sans Gradle : aapt2, javac, d8, apksigner). JDK 17 Microsoft dans `C:\Program Files\Microsoft\jdk-17…`, SDK dans `%LOCALAPPDATA%\Android\Sdk`. Résultat : `android/out/arbitre-baby.apk`.
 - **Clé de signature hors dépôt** : `~/.android/arbitre-baby.jks` + mot de passe dans `~/.android/arbitre-baby.pass`. À sauvegarder : sans elle, une nouvelle version ne s'installe plus par-dessus l'ancienne. Monter `versionCode` dans `AndroidManifest.xml` à chaque nouvel APK.
 
+## Match Coral « tournoi + table » (APK 3, depuis le 22/10/2026)
+
+- Menu Autres › « Match Coral (tournoi + table) » : code du tournoi (6 caractères, ou l'adresse Coral collée) + n° de table → « Charger le match ». Retenus dans `S.coral` (le libellé devient « Match Coral · table N »).
+- **Seulement dans l'APK 3+** (`ArbitreApp.coral(code, table)`) ; sur le site web ou les APK 1-2, le panneau renvoie vers `app.html`. L'APK ouvre `https://app.tablesoccer.org/p/CODE` (page **publique**, sans compte) dans une 2e WebView posée **sous** la page de l'appli (invisible mais affichée), puis exécute `android/coral.js` (copié dans les assets de l'APK) toutes les secondes, 30 essais max, jusqu'à ce que le store Vue soit prêt. Même tournoi redemandé = page gardée ouverte (Coral la tient à jour en direct), relecture seule. Une nouvelle demande annule la précédente (`coralDemande`).
+- `coral.js` lit `#q-app.__vue__.$store.state.tournament` : `playgrounds` (n° de table) → match de cette table, priorité `playing` puis `launched` puis `created` ; joueurs via `team_players_index[teamId]` → `players[pid].first_name/last_name` ; compétition via `phases[phase_id].competition.id` ; format via `taxonomies.match_formats` (type `games` : `games_count` = Bo, règle de la belle = format de la dernière manche dans `games_match_format_overrides` ; type `points` = Bo1) → `regle {win, diff, max}` (`max` 0 = sans limite). Erreurs : `tournoi` (page jamais prête), `table` (+ liste des tables), `match`.
+- Rien n'est envoyé à Coral et on n'appelle jamais `tournament.fetch_module` directement (protégé, ne pas contourner) : c'est la page Coral elle-même qui charge ses données, comme pour un spectateur.
+- La page (`window.arbitreCoral`) remet tout à zéro (score, manches, temps morts, avertissements, temps de jeu), met les noms (noms de famille joints par « / », police réduite si longs), `S.bo`, `S.regle`, une ligne d'historique. « Annuler » remet le match précédent, noms compris (`complet`). `gagnantManche()` applique `S.regle` à la belle ; `besoin()` = manches à gagner (Bo1 possible).
+- Arbitres affectés dans Coral : `matches_officials[matchId] = [{p: id}]` + `tournament_officials[id].code` (Coral ID) — pas encore utilisé (idée : « mon Coral ID → mon match », notification = accès officiel à demander à Coral).
+
 ## Versions, hors-ligne et distribution (depuis le 22/10/2026)
 
 - **Version du site** : `VERSION` en haut du script de `index.html` (V1.0.0 au 22/10/2026), dernier chiffre +1 à chaque livraison ; garder `version.json` › `site` identique.

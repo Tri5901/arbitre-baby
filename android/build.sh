@@ -27,6 +27,7 @@ cp ../icon-192.png res/mipmap-xxxhdpi/ic_launcher.png
 cp ../icon-maskable-512.png res/mipmap-xxxhdpi/ic_launcher_fg.png
 cp ../index.html ../manifest.json ../icon-192.png out/pkg/assets/
 cp ../fonts/*.woff2 out/pkg/assets/fonts/
+cp coral.js out/pkg/assets/
 
 "$BT/aapt2" compile --dir res -o out/res/res.zip
 "$BT/aapt2" link -o out/base.apk -I "$JAR" --manifest AndroidManifest.xml \

@@ -163,6 +163,23 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 @media (prefers-reduced-motion:reduce){#newSet.ready{animation:none}}
 .menu hr{border:0;border-top:1px solid var(--line);margin:4px 8px}
 .menu .ver{display:block;padding:8px 12px 4px;font-size:12px;color:var(--muted);text-decoration:none}
+/* Panneau « Match Coral » : même boîte que le menu */
+.panel{gap:8px;padding:12px}
+.panel[hidden]{display:none}
+.ptitre{font:700 13px/1 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.panel label{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
+.panel input{flex:1;min-width:0;height:44px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:var(--bg);color:var(--fg);padding:0 12px;font:600 16px/1 var(--font)}
+.panel #cCode{text-transform:uppercase}
+.panel #cTable{flex:0 0 76px;text-align:center}
+.panel label:first-of-type{flex-direction:column;align-items:stretch;gap:6px}
+.panel label:first-of-type input{flex:none}
+.panel .cgo{justify-content:center;background:linear-gradient(180deg,var(--go-a),var(--go-b));color:var(--on-go);font-weight:800;font-size:16px}
+.panel .cferme{justify-content:center;color:var(--muted);height:38px}
+.cetat{margin:0;font-size:13px;color:#c9ced5;white-space:pre-line}
+.cetat:empty{display:none}
+.cetat a{color:var(--accent);font-weight:700}
+.nm.long{font-size:16px}
+.nm.tlong{font-size:13px}
 .msg:empty{display:none}
 
 @media (max-height:800px){
@@ -197,7 +214,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 (function(){
   var $ = function(s){ return document.querySelector(s); };
   // Version du site : dernier chiffre +1 à chaque livraison
-  var VERSION = 'V1.0.0';
+  var VERSION = 'V1.0.1';
   var KEY = 'arbitre-baby-v2';
   // Dans l'appli Android, le pont ArbitreApp existe : on affiche l'aide des boutons de volume.
   var inApp = !!window.ArbitreApp;
@@ -227,7 +244,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     var segs = '';
     for (var k = 1; k <= 2; k++) segs += '<button data-to="'+i+':'+k+'" aria-label="Temps mort '+k+'">'+k+'</button>';
     return '<div class="side s'+i+'">'+
-      '<input class="nm" id="nm'+i+'" maxlength="12" aria-label="Nom de l\'équipe '+(i+1)+'">'+
+      '<input class="nm" id="nm'+i+'" maxlength="24" aria-label="Nom de l\'équipe '+(i+1)+'">'+
       '<div class="lab">Temps morts</div>'+
       '<div class="seg" role="group">'+segs+'</div>'+
       '<button class="warn-b" data-warn="'+i+'">Avert. '+(i+1)+'</button>'+
@@ -278,9 +295,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
           '<button role="menuitem" data-t="300" data-name="Retard" data-log="Retard · 5 min (une manche perdue toutes les 5 min)"><span>Retard</span><b>5 min</b></button>'+
           '<button role="menuitem" data-t="180" data-name="Entre éléments" data-log="Pause entre éléments · 180 s"><span>Entre éléments</span><b>180 s</b></button>'+
           '<hr>'+
+          '<button role="menuitem" id="coralBtn"><span>Match Coral (tournoi + table)</span></button>'+
           '<button role="menuitem" id="share"><span>Partager le résumé du match</span></button>'+
           '<button role="menuitem" id="clear"><span>Effacer l\'historique</span></button>'+
           '<a class="ver" href="app.html">Version ' + VERSION + ' · appli Android</a>'+
+        '</div>'+
+        '<div class="menu panel" id="coralPanel" role="dialog" aria-label="Match Coral" hidden>'+
+          '<b class="ptitre">Match Coral</b>'+
+          '<label>Tournoi<input id="cCode" placeholder="Code, ex. R7LXM7" autocapitalize="characters" autocomplete="off" maxlength="80"></label>'+
+          '<label>Table<input id="cTable" inputmode="numeric" placeholder="N°" autocomplete="off" maxlength="3"></label>'+
+          '<button class="cgo" id="cGo">Charger le match</button>'+
+          '<p class="cetat" id="cEtat"></p>'+
+          '<button class="cferme" id="cFermer">Fermer</button>'+
         '</div>'+
       '</section>'+
       '<section class="foot">'+
@@ -294,13 +320,18 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     '</div>';
 
   function nm(i){ return S.n[i] || ('Team ' + (i + 1)); }
-  // Équipe qui a gagné la manche en cours, sinon -1 : 5 points ; à la belle, 2 points d'écart, 8 points maximum
-  // (règlement simplifié FFBF)
+  // Manches à gagner : Bo5 → 3, Bo3 → 2, Bo1 (une seule manche, format Coral) → 1
+  function besoin(){ return Math.ceil(S.bo / 2); }
+  // Équipe qui a gagné la manche en cours, sinon -1 : 5 points ; à la belle, règle S.regle
+  // (par défaut 2 points d'écart, 8 maximum, comme le règlement simplifié FFBF ; sinon celle du format Coral)
   function gagnantManche(){
-    var a = S.pts[0], b = S.pts[1], hi = Math.max(a, b), need = S.bo === 5 ? 3 : 2;
+    var a = S.pts[0], b = S.pts[1], hi = Math.max(a, b), need = besoin();
+    var r = S.regle || { win: 5, diff: 2, max: 8 };
     var belle = S.sets[0] === need - 1 && S.sets[1] === need - 1;
-    if (a === b || hi < 5) return -1;
-    if (belle && Math.abs(a - b) < 2 && hi < 8) return -1;
+    if (a === b) return -1;
+    if (!belle) return hi >= 5 ? (a > b ? 0 : 1) : -1;
+    if (hi < r.win) return -1;
+    if (Math.abs(a - b) < r.diff && !(r.max && hi >= r.max)) return -1;
     return a > b ? 0 : 1;
   }
   function setMsg(t){ $('#msg').textContent = t || ''; }
@@ -320,9 +351,13 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
 
   /* ---------- Affichage des compteurs ---------- */
   function render(){
-    var need = S.bo === 5 ? 3 : 2;
+    var need = besoin();
     for (var i = 0; i < 2; i++) {
       $('#pt'+i).textContent = S.pts[i];
+      // Noms longs (doubles venus de Coral) : police plus petite pour tout voir
+      var nmi = $('#nm'+i), ln = nmi.value.length;
+      nmi.classList.toggle('long', ln > 10 && ln <= 15);
+      nmi.classList.toggle('tlong', ln > 15);
       // Manches : une pastille par manche à gagner, pleine quand elle est gagnée
       var pips = '<b>MANCHES</b>';
       for (var m = 0; m < Math.max(need, S.sets[i]); m++) pips += '<i' + (m < S.sets[i] ? ' class="on"' : '') + '></i>';
@@ -355,7 +390,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     (function(i){
       var inp = $('#nm'+i);
       inp.value = S.n[i];
-      inp.addEventListener('input', function(){ S.n[i] = inp.value; save(); });
+      inp.addEventListener('input', function(){ S.n[i] = inp.value; save(); render(); });
     })(q);
   }
 
@@ -544,18 +579,22 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   $('#undo').addEventListener('click', function(){
     var e = pile.pop();
     if (!e) return;
-    // On garde le temps de jeu, les noms et les réglages tels qu'ils sont maintenant
+    // On garde le temps de jeu, les noms et les réglages tels qu'ils sont maintenant,
+    // sauf pour l'annulation d'un match Coral chargé (e.complet) : tout revient comme avant
     var cur = S;
     S = JSON.parse(e.s);
-    S.gt = cur.gt; S.n = cur.n; S.vib = cur.vib; S.snd = cur.snd;
+    if (!e.complet) { S.gt = cur.gt; S.n = cur.n; }
+    S.vib = cur.vib; S.snd = cur.snd;
     if (e.t && T === e.t) T = null;
-    render(); renderLog(); renderTimer(); save();
+    $('#nm0').value = S.n[0]; $('#nm1').value = S.n[1]; lastGT = '';
+    render(); renderLog(); renderTimer(); renderGT(); coralLabel(); save();
   });
 
   /* ---------- Résumé du match à partager ---------- */
   function resume(){
-    var need = S.bo === 5 ? 3 : 2, l = [];
+    var need = besoin(), l = [], c = S.coral;
     l.push('Arbitre Baby · ' + new Date().toLocaleDateString('fr-FR'));
+    if (c && c.comp) l.push(c.tournoi + ' · ' + c.comp + (c.phase ? ' · ' + c.phase : '') + ' · table ' + c.table);
     l.push(nm(0) + ' ' + S.sets[0] + ' - ' + S.sets[1] + ' ' + nm(1) + ' (Bo' + S.bo + ')');
     S.manches.forEach(function(m, k){ l.push('Manche ' + (k + 1) + ' : ' + m[0] + ' - ' + m[1]); });
     if (S.pts[0] || S.pts[1]) l.push('Manche en cours : ' + S.pts[0] + ' - ' + S.pts[1]);
@@ -587,7 +626,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     S.pts = [0, 0]; render(); addLog('Points remis à 0');
   });
   confirmable($('#newSet'), 'Confirmer ?', function(){
-    var a = S.pts[0], b = S.pts[1], need = S.bo === 5 ? 3 : 2, started = false;
+    var a = S.pts[0], b = S.pts[1], need = besoin(), started = false;
     snap();
     if (a !== b) {
       var w = a > b ? 0 : 1;
@@ -606,6 +645,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
   confirmable($('#resetAll'), 'Confirmer ?', function(){
     snap();
     S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.log = []; S.manches = [];
+    // On garde le tournoi et la table pour le prochain match Coral, pas le match lui-même
+    delete S.regle;
+    if (S.coral) S.coral = { code: S.coral.code, table: S.coral.table };
     S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
     T = null; renderTimer(); render(); renderLog(); renderGT(); save();
   });
@@ -622,6 +664,76 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--fg);outline-off
     else if (ok) setMsg('Chrome a envoyé la vibration au téléphone. Si rien ne bouge, vérifie dans Android : vibrations activées, mode silencieux et Ne pas déranger coupés.');
     else setMsg('Chrome a refusé la vibration (réponse : non).');
   });
+
+  /* ---------- Match Coral (tournoi + table) ---------- */
+  // Seule l'appli Android 3+ peut lire la page publique Coral (ArbitreApp.coral) ; réponse dans window.arbitreCoral
+  var panneau = $('#coralPanel');
+  var coralOk = inApp && typeof ArbitreApp.coral === 'function';
+  function coralLabel(){
+    $('#coralBtn span').textContent = S.coral && S.coral.table ? 'Match Coral · table ' + S.coral.table : 'Match Coral (tournoi + table)';
+  }
+  function etatCoral(html){ $('#cEtat').innerHTML = html || ''; }
+  function ouvrirCoral(open){
+    panneau.hidden = !open;
+    if (!open) return;
+    $('#cCode').value = (S.coral && S.coral.code) || '';
+    $('#cTable').value = (S.coral && S.coral.table) || '';
+    etatCoral(coralOk ? '' : 'Le match Coral se lit dans l\'appli Android (version 3 ou plus récente). <a href="app.html">Télécharger l\'appli</a>');
+  }
+  $('#coralBtn').addEventListener('click', function(){ ouvrirCoral(true); });
+  $('#cFermer').addEventListener('click', function(){ ouvrirCoral(false); });
+  document.addEventListener('click', function(e){
+    if (!panneau.hidden && !panneau.contains(e.target) && !$('#coralBtn').contains(e.target)) ouvrirCoral(false);
+  });
+  // Accepte le code seul ou l'adresse Coral collée (…/p/R7LXM7 ou …/t/R7LXM7)
+  function codeTournoi(v){
+    v = String(v).toUpperCase();
+    var m = v.match(/\/[PT]\/([A-Z0-9]{6})/) || v.match(/\b([A-Z0-9]{6})\b/);
+    return m ? m[1] : '';
+  }
+  $('#cGo').addEventListener('click', function(){
+    if (!coralOk) return;
+    var code = codeTournoi($('#cCode').value), table = parseInt($('#cTable').value, 10);
+    if (!code) { etatCoral('Le code du tournoi fait 6 caractères : il est dans l\'adresse de la page Coral (ex. …/p/R7LXM7).'); return; }
+    if (!table) { etatCoral('Indique le numéro de ta table.'); return; }
+    S.coral = { code: code, table: String(table) }; save(); coralLabel();
+    etatCoral('Recherche du match sur la table ' + table + '…');
+    ArbitreApp.coral(code, String(table));
+  });
+  function nomEquipe(l){ return l && l.length ? l.map(function(p){ return p.nom; }).join('/') : ''; }
+  // [1,2,3,4,8,9] → « 1 à 4, 8 à 9 »
+  function plages(t){
+    var out = [], d = t[0], f = t[0];
+    for (var i = 1; i <= t.length; i++) {
+      if (t[i] === f + 1) { f = t[i]; continue; }
+      out.push(d === f ? String(d) : d + ' à ' + f);
+      d = f = t[i];
+    }
+    return out.join(', ');
+  }
+  window.arbitreCoral = function(r){
+    if (!r || r.err) {
+      etatCoral(!r || r.err === 'tournoi' ? 'Tournoi introuvable : vérifie le code et la connexion.'
+        : r.err === 'table' ? 'Pas de table ' + r.table + ' dans ce tournoi' + (r.tables && r.tables.length ? ' (tables ' + plages(r.tables) + ').' : '.')
+        : 'Aucun match en cours, appelé ou à venir sur la table ' + r.table + '.');
+      return;
+    }
+    var m = r.match;
+    // Nouveau match : tout repart à zéro (Annuler remet le match précédent, noms compris)
+    snap(); pile[pile.length - 1].complet = true;
+    S.pts = [0, 0]; S.sets = [0, 0]; S.to = [0, 0]; S.warn = [0, 0]; S.manches = [];
+    S.gt = { ms: 0, run: false, t0: 0 }; lastGT = '';
+    S.bo = m.bo; S.regle = m.regle;
+    S.n = [nomEquipe(m.home) || 'Team 1', nomEquipe(m.away) || 'Team 2'];
+    $('#nm0').value = S.n[0]; $('#nm1').value = S.n[1];
+    S.coral = { code: r.code, table: r.table, tournoi: r.tournoi, comp: m.comp, phase: m.phase, match: m.id };
+    T = null;
+    renderTimer(); render(); renderGT(); coralLabel();
+    addLog('Coral · table ' + r.table + ' · ' + m.comp + ' : ' + S.n[0] + ' contre ' + S.n[1]);
+    ouvrirCoral(false);
+    setMsg((m.statut === 'created' ? 'Match à venir chargé' : 'Match chargé') + ' : ' + m.comp + (m.phase ? ' · ' + m.phase : '') + ' · Bo' + m.bo);
+  };
+  coralLabel();
 
   /* ---------- Nouvelle version de l'appli Android ---------- */
   // version.json donne le numéro du dernier APK ; l'APK 1 n'annonce pas sa version
